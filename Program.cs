@@ -14,6 +14,8 @@ namespace mifty
                                   exitEvent.Set();
                               };
 
+            // TODO: add a server config and associated command line arguments
+            // for what this thing will do - addresses to bind to etc.
             Server server = new Server();
             server.Start();
 

@@ -45,5 +45,7 @@ namespace mifty
         public uint TimeToLive { get; set; }
         public ushort ResponseLength { get; set; }
         public string ResponseData { get; set; }
+
+        // TODO: add methods to serialise/deserialise, or maybe not as it adds overhead?
     }
 }

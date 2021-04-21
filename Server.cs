@@ -40,6 +40,8 @@ namespace mifty
             // take a copy of the buffer and start receiving again ASAP to service another customer
             byte[] message = new byte[messageLength];
             Array.Copy(state.Buffer, message, messageLength);
+
+            // TODO: add message and endpoint into state based on ID or IP so that we know where to send the response to once received from upstream server
             
             EndPoint dummyEndpoint = new IPEndPoint(IPAddress.Any, 0);
             udp.BeginReceiveFrom(state.Buffer, state.Position, state.Buffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveCallback), state);
@@ -108,12 +110,14 @@ namespace mifty
         public void Start()
         {
             // create a socket that will accept requests from the "client network"
+            // TODO: don't hard code this!
             Socket udp = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             udp.Bind(new IPEndPoint(IPAddress.Parse("172.22.160.1"), 53));
 
             state.Udp = udp;
 
             // create a socket that will be used to forward requests on
+            // TODO: don't hard code this!
             state.UdpOut = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             state.UdpOut.Bind(new IPEndPoint(IPAddress.Parse("192.168.1.71"), 0));
 
