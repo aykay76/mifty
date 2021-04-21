@@ -107,14 +107,17 @@ namespace mifty
 
         public void Start()
         {
+            // create a socket that will accept requests from the "client network"
             Socket udp = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             udp.Bind(new IPEndPoint(IPAddress.Parse("172.22.160.1"), 53));
 
             state.Udp = udp;
 
+            // create a socket that will be used to forward requests on
             state.UdpOut = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             state.UdpOut.Bind(new IPEndPoint(IPAddress.Parse("192.168.1.71"), 0));
 
+            // and begin...
             EndPoint dummyEndpoint = new IPEndPoint(IPAddress.Any, 0);
             udp.BeginReceiveFrom(state.Buffer, state.Position, state.Buffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveCallback), state);
         }
@@ -122,6 +125,7 @@ namespace mifty
         public void Stop()
         {
             state.Udp.Close();
+            state.UdpOut.Close();
         }
     }
 }
