@@ -2,10 +2,10 @@ namespace mifty
 {
     public static class QueryClass
     {
-        public const byte IN = 1;
-        public const byte CS = 2;
-        public const byte CH = 3;
-        public const byte HS = 4;
-        public const byte All = 255;
+        public const ushort IN = 1;
+        public const ushort CS = 2;
+        public const ushort CH = 3;
+        public const ushort HS = 4;
+        public const ushort All = 255;
     }
 }

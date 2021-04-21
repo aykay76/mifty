@@ -24,8 +24,24 @@ namespace mifty
             udp.BeginReceiveFrom(state.Buffer, state.Position, state.Buffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveCallback), state);
 
             // TODO: start decoding the message
+            //                                 1  1  1  1  1  1
+            //   0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
+            // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+            // |                      ID                       |
+            // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+            // |QR|   Opcode  |AA|TC|RD|RA|   Z    |   RCODE   |
+            // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+            // |                    QDCOUNT                    |
+            // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+            // |                    ANCOUNT                    |
+            // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+            // |                    NSCOUNT                    |
+            // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+            // |                    ARCOUNT                    |
+            // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+            
             for (int i = 0; i < messageLength; i++)
             {
+                // TODO: when decoding labels, don't forget pointers - per section 4.1.4 of RFC1035
                 Console.Write($"{message[i]:X2} ");
             }
             Console.WriteLine();
