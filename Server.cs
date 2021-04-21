@@ -18,6 +18,7 @@ namespace mifty
             Console.WriteLine("Response received from forwarder:");
             for (int i = 0; i < messageLength; i++)
             {
+                // TODO: link the response with the original request through state somehow
                 // TODO: when decoding labels, don't forget pointers - per section 4.1.4 of RFC1035
                 Console.Write($"{message[i]:X2} ");
             }
@@ -65,6 +66,9 @@ namespace mifty
             Console.WriteLine("Message received:");
             for (int i = 0; i < messageLength; i++)
             {
+                // TODO: decide what i'm going to do here
+                // TODO: add configurable log levels
+                // TODO: decode names and the other fields, output nice logs
                 // TODO: when decoding labels, don't forget pointers - per section 4.1.4 of RFC1035
                 Console.Write($"{message[i]:X2} ");
             }
