@@ -13,21 +13,33 @@ namespace mifty
             State state = (State)asyncResult.AsyncState;
             Socket udp = state.Udp;
 
-            EndPoint remoteEndpoint = null;
+            EndPoint remoteEndpoint = new IPEndPoint(IPAddress.Any, 0);
             int messageLength = udp.EndReceiveFrom(asyncResult, ref remoteEndpoint);
-            // TODO: start decoding the message
 
+            // take a copy of the buffer and start receiving again ASAP to service another customer
+            byte[] message = new byte[messageLength];
+            Array.Copy(state.Buffer, message, messageLength);
+            
+            EndPoint dummyEndpoint = new IPEndPoint(IPAddress.Any, 0);
+            udp.BeginReceiveFrom(state.Buffer, state.Position, state.Buffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveCallback), state);
+
+            // TODO: start decoding the message
+            for (int i = 0; i < messageLength; i++)
+            {
+                Console.Write($"{message[i]:X2} ");
+            }
+            Console.WriteLine();
         }
 
         public void Start()
         {
             Socket udp = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            udp.Bind(new IPEndPoint(IPAddress.Any, 53));
+            udp.Bind(new IPEndPoint(IPAddress.Parse("172.22.160.1"), 53));
 
             state.Udp = udp;
 
-            EndPoint remoteEndpoint = new IPEndPoint(IPAddress.Any, 0);
-            udp.BeginReceiveFrom(state.Buffer, state.Position, state.Buffer.Length, SocketFlags.None, ref remoteEndpoint, new AsyncCallback(ReceiveCallback), state);
+            EndPoint dummyEndpoint = new IPEndPoint(IPAddress.Any, 0);
+            udp.BeginReceiveFrom(state.Buffer, state.Position, state.Buffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveCallback), state);
         }
 
         public void Stop()
