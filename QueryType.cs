@@ -18,6 +18,7 @@ namespace mifty
         public const ushort MINFO = 14;
         public const ushort MX = 15;
         public const ushort TXT = 16;
+        public const ushort AAAA = 28; // (0x1C)
         public const ushort AFXR = 252;
         public const ushort MAILB = 253;
         public const ushort MAILA = 254;
