@@ -1,3 +1,6 @@
+# MIFTY (Mine Is Faster Than Yours)
+## It's really... nifty...
+
 It crossed my mind that after 27 years (on and off) of programming various protocols and distributed systems, i've never actually developed a DNS client/server/resolver/forwarder. I'm bored and figured, why not?!
 
 DNS is at the root of everything and without it we would have no internet as you know it, so it's good to understand how it works. Plus I saw a thing about "faster than light" DNS and was triggered - can I make the fastest DNS "thing" but also make it cross platform?
