@@ -42,11 +42,11 @@ namespace mifty
             int messageLength = udp.EndReceiveFrom(asyncResult, ref remoteEndpoint);
 
             // take a copy of the buffer and start receiving again ASAP to service another customer
-            byte[] message = new byte[messageLength];
-            Array.Copy(state.Buffer, message, messageLength);
+            byte[] bytes = new byte[messageLength];
+            Array.Copy(state.Buffer, bytes, messageLength);
+            Message message = new Message(bytes);
 
-            // TODO: add message and endpoint into state based on ID or IP so that we know where to send the response to once received from upstream server
-            ushort id = BitConverter.ToUInt16(message, 0);
+            ushort id = BitConverter.ToUInt16(bytes, 0);
             state.Clients[id] = remoteEndpoint as IPEndPoint;
 
             EndPoint dummyEndpoint = new IPEndPoint(IPAddress.Any, 0);
@@ -75,12 +75,12 @@ namespace mifty
                 // TODO: add configurable log levels
                 // TODO: decode names and the other fields, output nice logs
                 // TODO: when decoding labels, don't forget pointers - per section 4.1.4 of RFC1035
-                Console.Write($"{message[i]:X2} ");
+                Console.Write($"{bytes[i]:X2} ");
             }
             Console.WriteLine();
 
             // for now for now i'm just going to forward to a known DNS server, see what happens
-            int sent = state.UdpOut.SendTo(message, 0, messageLength, SocketFlags.None, new IPEndPoint(IPAddress.Parse("192.168.1.254"), 53));
+            int sent = state.UdpOut.SendTo(bytes, 0, messageLength, SocketFlags.None, new IPEndPoint(IPAddress.Parse(state.Server.config.Forwarder), 53));
             Console.WriteLine("I know nothing, forwarding on");
 
             state.UdpOut.BeginReceiveFrom(state.ResponseBuffer, state.ResponsePosition, state.ResponseBuffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveResponseCallback), state);
@@ -130,6 +130,7 @@ namespace mifty
             Socket udp = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             udp.Bind(new IPEndPoint(IPAddress.Parse(config.ServerAddress), config.ServerPort));
 
+            state.Server = this;
             state.Udp = udp;
 
             // create a socket that will be used to forward requests on

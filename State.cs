@@ -13,6 +13,7 @@ namespace mifty
         public int Position { get; set; }
         public byte[] ResponseBuffer { get; set; }
         public int ResponsePosition { get; set; }
+        public Server Server { get; set; }
 
         // TODO: I might replace this with a more rich object than just endpoint if I need to store more information
         public Dictionary<ushort, IPEndPoint> Clients { get; set; }

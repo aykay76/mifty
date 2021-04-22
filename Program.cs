@@ -20,7 +20,8 @@ namespace mifty
             server.WithConfig(new ServerConfig {
                 ServerAddress = "172.22.160.1",
                 ResolverAddress = "192.168.1.71",
-                ServerPort = 53
+                ServerPort = 53,
+                Forwarder = "192.168.1.254"
             }).Start();
 
             Console.WriteLine("Hello World!");

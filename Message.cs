@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 namespace mifty
 {
     //                                 1  1  1  1  1  1
@@ -33,19 +36,37 @@ namespace mifty
         public ushort NameServerCount { get; set; }
         public ushort AdditionalRecordCount { get; set; }
 
-        // if query
-        public string QueryName { get; set; }
-        public ushort QueryType { get; set; }
-        public ushort QueryClass { get; set; }
-
-        // if answer
-        public string DomainName { get; set; }
-        public ushort ResponseType { get; set; }
-        public ushort ResponseClass { get; set; }
-        public uint TimeToLive { get; set; }
-        public ushort ResponseLength { get; set; }
-        public string ResponseData { get; set; }
+        public List<Query> Queries { get; set; }
+        public List<Answer> Answers { get; set; }
 
         // TODO: add methods to serialise/deserialise, or maybe not as it adds overhead?
+        private byte[] bytes;
+
+        public Message(byte[] message)
+        {
+            bytes = message;
+            ID = BitConverter.ToUInt16(bytes, 0);
+            Query = (bytes[2] & 0x80) == 0x80;
+            Opcode = (byte)((bytes[2] & 120) >> 3);
+            AA = (bytes[2] & 4) == 4;
+            TC = (bytes[2] & 2) == 2;
+            RD = (bytes[2] & 1) == 1;
+            RA = (bytes[3] & 0x80) == 0x80;
+            ResponseCode = (byte)(bytes[3] & 0xf);
+
+            QueryCount = ((ushort)((ushort)(bytes[4] << 8) | (ushort)bytes[5]));
+            AnswerCount = ((ushort)((ushort)(bytes[6] << 8) | (ushort)bytes[7]));
+            NameServerCount = ((ushort)((ushort)(bytes[8] << 8) | (ushort)bytes[9]));
+            AdditionalRecordCount = ((ushort)((ushort)(bytes[10] << 8) | (ushort)bytes[10]));
+
+            // process the queries
+            Queries = new List<Query>();
+            for (int q = 0; q < QueryCount; q++)
+            {
+                
+            }
+
+            Answers = new List<Answer>();
+        }
     }
 }
