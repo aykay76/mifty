@@ -6,6 +6,7 @@ namespace mifty
 {
     public class Server
     {
+        ServerConfig config = null;
         State state = new State();
 
         public static void ReceiveResponseCallback(IAsyncResult asyncResult)
@@ -115,19 +116,25 @@ namespace mifty
             // Console.WriteLine();
         }
 
+        public Server WithConfig(ServerConfig serverConfig)
+        {
+            config = serverConfig;
+            return this;
+        }
+
         public void Start()
         {
+            // TODO: add TCP support
+
             // create a socket that will accept requests from the "client network"
-            // TODO: don't hard code this!
             Socket udp = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            udp.Bind(new IPEndPoint(IPAddress.Parse("172.22.160.1"), 53));
+            udp.Bind(new IPEndPoint(IPAddress.Parse(config.ServerAddress), config.ServerPort));
 
             state.Udp = udp;
 
             // create a socket that will be used to forward requests on
-            // TODO: don't hard code this!
             state.UdpOut = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            state.UdpOut.Bind(new IPEndPoint(IPAddress.Parse("192.168.1.71"), 0));
+            state.UdpOut.Bind(new IPEndPoint(IPAddress.Parse(config.ResolverAddress), 0));
 
             // and begin...
             EndPoint dummyEndpoint = new IPEndPoint(IPAddress.Any, 0);

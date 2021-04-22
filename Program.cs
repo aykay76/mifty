@@ -17,7 +17,11 @@ namespace mifty
             // TODO: add a server config and associated command line arguments
             // for what this thing will do - addresses to bind to etc.
             Server server = new Server();
-            server.Start();
+            server.WithConfig(new ServerConfig {
+                ServerAddress = "172.22.160.1",
+                ResolverAddress = "192.168.1.71",
+                ServerPort = 53
+            }).Start();
 
             Console.WriteLine("Hello World!");
             exitEvent.WaitOne();
