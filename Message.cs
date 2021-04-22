@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace mifty
 {
@@ -57,16 +58,62 @@ namespace mifty
             QueryCount = ((ushort)((ushort)(bytes[4] << 8) | (ushort)bytes[5]));
             AnswerCount = ((ushort)((ushort)(bytes[6] << 8) | (ushort)bytes[7]));
             NameServerCount = ((ushort)((ushort)(bytes[8] << 8) | (ushort)bytes[9]));
-            AdditionalRecordCount = ((ushort)((ushort)(bytes[10] << 8) | (ushort)bytes[10]));
+            AdditionalRecordCount = ((ushort)((ushort)(bytes[10] << 8) | (ushort)bytes[11]));
 
             // process the queries
+            int i = 12;
             Queries = new List<Query>();
             for (int q = 0; q < QueryCount; q++)
             {
-                
+                Query query = new Query();
+                query.Name = ParseName(ref i);
+                query.Type = ((ushort)((ushort)(bytes[i++] << 8) | (ushort)bytes[i++]));
+                query.Class = ((ushort)((ushort)(bytes[i++] << 8) | (ushort)bytes[i++]));
+                Queries.Add(query);
             }
 
             Answers = new List<Answer>();
+            for (int a = 0; a < AnswerCount; a++)
+            {
+                Answer answer = new Answer();
+
+                Answers.Add(answer);
+            }
+        }
+
+        private string ParseName(ref int i)
+        {
+            StringBuilder builder = new StringBuilder();
+
+            while (bytes[i] != 0)
+            {
+                byte partLength = bytes[i++];
+                if ((partLength & 0xc0) == 0xc0)
+                {
+                    // pointer
+                    i++;
+                    // 
+                    int j = bytes[i];
+                    return ParseName(ref j);
+                }
+                else
+                {
+                    for (int b = 0; b < partLength; b++)
+                    {
+                        builder.Append((char)bytes[i]);
+                        i++;
+                    }
+
+                    if (bytes[i] != 0)
+                    {
+                        builder.Append('.');
+                    }
+                }
+            }
+
+            i++;
+
+            return builder.ToString();
         }
     }
 }
