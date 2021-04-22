@@ -14,23 +14,28 @@ namespace mifty
             State state = (State)asyncResult.AsyncState;
             EndPoint remoteEndpoint = new IPEndPoint(IPAddress.Any, 0);
             int messageLength = state.UdpOut.EndReceiveFrom(asyncResult, ref remoteEndpoint);
-            byte[] message = new byte[messageLength];
-            Array.Copy(state.ResponseBuffer, message, messageLength);
+            byte[] bytes = new byte[messageLength];
+            Array.Copy(state.ResponseBuffer, bytes, messageLength);
             Console.WriteLine("Response received from forwarder:");
             for (int i = 0; i < messageLength; i++)
             {
                 // TODO: link the response with the original request through state somehow
                 // TODO: when decoding labels, don't forget pointers - per section 4.1.4 of RFC1035
-                Console.Write($"{message[i]:X2} ");
+                Console.Write($"{bytes[i]:X2} ");
+                if (i % 10 == 9)
+                {
+                    Console.WriteLine();
+                }
             }
             Console.WriteLine();
 
             // send response to client
             Console.WriteLine("Sending back to client");
 
+            Message message = new Message(bytes);
+
             // find the right client
-            ushort id = BitConverter.ToUInt16(message, 0);
-            int sent = state.Udp.SendTo(message, 0, messageLength, SocketFlags.None, state.Clients[id]);
+            int sent = state.Udp.SendTo(bytes, 0, messageLength, SocketFlags.None, state.Clients[message.ID]);
         }
 
         public static void ReceiveCallback(IAsyncResult asyncResult)
@@ -46,8 +51,7 @@ namespace mifty
             Array.Copy(state.Buffer, bytes, messageLength);
             Message message = new Message(bytes);
 
-            ushort id = BitConverter.ToUInt16(bytes, 0);
-            state.Clients[id] = remoteEndpoint as IPEndPoint;
+            state.Clients[message.ID] = remoteEndpoint as IPEndPoint;
 
             EndPoint dummyEndpoint = new IPEndPoint(IPAddress.Any, 0);
             udp.BeginReceiveFrom(state.Buffer, state.Position, state.Buffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveCallback), state);

@@ -39,6 +39,8 @@ namespace mifty
 
         public List<Query> Queries { get; set; }
         public List<Answer> Answers { get; set; }
+        public List<Answer> Authority { get; set; }
+        public List<Answer> AdditionalRecords { get; set; }
 
         // TODO: add methods to serialise/deserialise, or maybe not as it adds overhead?
         private byte[] bytes;
@@ -55,10 +57,10 @@ namespace mifty
             RA = (bytes[3] & 0x80) == 0x80;
             ResponseCode = (byte)(bytes[3] & 0xf);
 
-            QueryCount = ((ushort)((ushort)(bytes[4] << 8) | (ushort)bytes[5]));
-            AnswerCount = ((ushort)((ushort)(bytes[6] << 8) | (ushort)bytes[7]));
-            NameServerCount = ((ushort)((ushort)(bytes[8] << 8) | (ushort)bytes[9]));
-            AdditionalRecordCount = ((ushort)((ushort)(bytes[10] << 8) | (ushort)bytes[11]));
+            QueryCount = (ushort)((ushort)(bytes[4] << 8) | (ushort)bytes[5]);
+            AnswerCount = (ushort)((ushort)(bytes[6] << 8) | (ushort)bytes[7]);
+            NameServerCount = (ushort)((ushort)(bytes[8] << 8) | (ushort)bytes[9]);
+            AdditionalRecordCount = (ushort)((ushort)(bytes[10] << 8) | (ushort)bytes[11]);
 
             // process the queries
             int i = 12;
@@ -67,8 +69,8 @@ namespace mifty
             {
                 Query query = new Query();
                 query.Name = ParseName(ref i);
-                query.Type = ((ushort)((ushort)(bytes[i++] << 8) | (ushort)bytes[i++]));
-                query.Class = ((ushort)((ushort)(bytes[i++] << 8) | (ushort)bytes[i++]));
+                query.Type = (ushort)((ushort)(bytes[i++] << 8) | (ushort)bytes[i++]);
+                query.Class = (ushort)((ushort)(bytes[i++] << 8) | (ushort)bytes[i++]);
                 Queries.Add(query);
             }
 
@@ -76,8 +78,42 @@ namespace mifty
             for (int a = 0; a < AnswerCount; a++)
             {
                 Answer answer = new Answer();
-
+                answer.Name = ParseName(ref i);
+                answer.Type = (ushort)((ushort)(bytes[i++] << 8) | (ushort)bytes[i++]);
+                answer.Class = (ushort)((ushort)bytes[i++] << 8 | (ushort)bytes[i++]);
+                answer.TimeToLive = (uint)bytes[i++] << 24 | (uint)bytes[i++] << 16 | (uint)bytes[i++] << 8 | (uint)bytes[i++];
+                answer.Length = (ushort)((ushort)bytes[i++] << 8 | (ushort)bytes[i++]);
+                answer.DataPos = i;
+                i += answer.Length;
                 Answers.Add(answer);
+            }
+
+            Authority = new List<Answer>();
+            for (int a = 0; a < NameServerCount; a++)
+            {
+                Answer answer = new Answer();
+                answer.Name = ParseName(ref i);
+                answer.Type = (ushort)((ushort)(bytes[i++] << 8) | (ushort)bytes[i++]);
+                answer.Class = (ushort)((ushort)bytes[i++] << 8 | (ushort)bytes[i++]);
+                answer.TimeToLive = (uint)bytes[i++] << 24 | (uint)bytes[i++] << 16 | (uint)bytes[i++] << 8 | (uint)bytes[i++];
+                answer.Length = (ushort)((ushort)bytes[i++] << 8 | (ushort)bytes[i++]);
+                answer.DataPos = i;
+                i += answer.Length;
+                Authority.Add(answer);
+            }
+
+            AdditionalRecords = new List<Answer>();
+            for (int a = 0; a < AdditionalRecordCount; a++)
+            {
+                Answer answer = new Answer();
+                answer.Name = ParseName(ref i);
+                answer.Type = (ushort)((ushort)(bytes[i++] << 8) | (ushort)bytes[i++]);
+                answer.Class = (ushort)((ushort)bytes[i++] << 8 | (ushort)bytes[i++]);
+                answer.TimeToLive = (uint)bytes[i++] << 24 | (uint)bytes[i++] << 16 | (uint)bytes[i++] << 8 | (uint)bytes[i++];
+                answer.Length = (ushort)((ushort)bytes[i++] << 8 | (ushort)bytes[i++]);
+                answer.DataPos = i;
+                i += answer.Length;
+                AdditionalRecords.Add(answer);
             }
         }
 
@@ -91,9 +127,7 @@ namespace mifty
                 if ((partLength & 0xc0) == 0xc0)
                 {
                     // pointer
-                    i++;
-                    // 
-                    int j = bytes[i];
+                    int j = bytes[i++];
                     return ParseName(ref j);
                 }
                 else
