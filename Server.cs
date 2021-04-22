@@ -26,7 +26,10 @@ namespace mifty
 
             // send response to client
             Console.WriteLine("Sending back to client");
-            int sent = state.Udp.SendTo(message, 0, messageLength, SocketFlags.None, state.RemoteEndpoint);
+
+            // find the right client
+            ushort id = BitConverter.ToUInt16(message, 0);
+            int sent = state.Udp.SendTo(message, 0, messageLength, SocketFlags.None, state.Clients[id]);
         }
 
         public static void ReceiveCallback(IAsyncResult asyncResult)
@@ -36,14 +39,15 @@ namespace mifty
 
             EndPoint remoteEndpoint = new IPEndPoint(IPAddress.Any, 0);
             int messageLength = udp.EndReceiveFrom(asyncResult, ref remoteEndpoint);
-            state.RemoteEndpoint = remoteEndpoint as IPEndPoint;
 
             // take a copy of the buffer and start receiving again ASAP to service another customer
             byte[] message = new byte[messageLength];
             Array.Copy(state.Buffer, message, messageLength);
 
             // TODO: add message and endpoint into state based on ID or IP so that we know where to send the response to once received from upstream server
-            
+            ushort id = BitConverter.ToUInt16(message, 0);
+            state.Clients[id] = remoteEndpoint as IPEndPoint;
+
             EndPoint dummyEndpoint = new IPEndPoint(IPAddress.Any, 0);
             udp.BeginReceiveFrom(state.Buffer, state.Position, state.Buffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveCallback), state);
 

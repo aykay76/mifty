@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 
@@ -12,9 +13,9 @@ namespace mifty
         public int Position { get; set; }
         public byte[] ResponseBuffer { get; set; }
         public int ResponsePosition { get; set; }
-        public IPEndPoint RemoteEndpoint { get; set; }
 
-        // TODO: add some state variables to match requests and responses
+        // TODO: I might replace this with a more rich object than just endpoint if I need to store more information
+        public Dictionary<ushort, IPEndPoint> Clients { get; set; }
 
         public State()
         {
@@ -23,6 +24,8 @@ namespace mifty
 
             ResponseBuffer = new byte[512];
             ResponsePosition = 0;
+
+            Clients = new Dictionary<ushort, IPEndPoint>();
         }
     }
 }
