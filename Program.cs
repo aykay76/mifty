@@ -21,7 +21,8 @@ namespace mifty
                 ServerAddress = "172.22.160.1",
                 ResolverAddress = "192.168.1.71",
                 ServerPort = 53,
-                Forwarder = "192.168.1.254"
+                Forwarder = "192.168.1.254",
+                LogLevel = LogLevel.Error
             }).Start();
 
             Console.WriteLine("Hello World!");

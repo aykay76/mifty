@@ -16,18 +16,19 @@ namespace mifty
             int messageLength = state.UdpOut.EndReceiveFrom(asyncResult, ref remoteEndpoint);
             byte[] bytes = new byte[messageLength];
             Array.Copy(state.ResponseBuffer, bytes, messageLength);
-            Console.WriteLine("Response received from forwarder:");
-            for (int i = 0; i < messageLength; i++)
-            {
-                // TODO: link the response with the original request through state somehow
-                // TODO: when decoding labels, don't forget pointers - per section 4.1.4 of RFC1035
-                Console.Write($"{bytes[i]:X2} ");
-                if (i % 16 == 15) Console.WriteLine();
-            }
-            Console.WriteLine();
 
-            // send response to client
-            Console.WriteLine("Sending back to client");
+            if (state.Server.config.LogLevel == LogLevel.Debug)
+            {
+                Console.WriteLine("Response received from forwarder:");
+                for (int i = 0; i < messageLength; i++)
+                {
+                    // TODO: link the response with the original request through state somehow
+                    // TODO: when decoding labels, don't forget pointers - per section 4.1.4 of RFC1035
+                    Console.Write($"{bytes[i]:X2} ");
+                    if (i % 16 == 15) Console.WriteLine();
+                }
+                Console.WriteLine();
+            }
 
             Message message = new Message(bytes);
 
@@ -53,21 +54,23 @@ namespace mifty
             EndPoint dummyEndpoint = new IPEndPoint(IPAddress.Any, 0);
             udp.BeginReceiveFrom(state.Buffer, state.Position, state.Buffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveCallback), state);
 
-            Console.WriteLine("Message received:");
-            for (int i = 0; i < messageLength; i++)
+            if (state.Server.config.LogLevel == LogLevel.Debug)
             {
-                // TODO: decide what i'm going to do here
-                // TODO: add configurable log levels
-                // TODO: decode names and the other fields, output nice logs
-                // TODO: when decoding labels, don't forget pointers - per section 4.1.4 of RFC1035
-                Console.Write($"{bytes[i]:X2} ");
-                if (i % 16 == 15) Console.WriteLine();
+                Console.WriteLine("Message received:");
+                for (int i = 0; i < messageLength; i++)
+                {
+                    // TODO: decide what i'm going to do here
+                    // TODO: add configurable log levels
+                    // TODO: decode names and the other fields, output nice logs
+                    // TODO: when decoding labels, don't forget pointers - per section 4.1.4 of RFC1035
+                    Console.Write($"{bytes[i]:X2} ");
+                    if (i % 16 == 15) Console.WriteLine();
+                }
+                Console.WriteLine();
             }
-            Console.WriteLine();
 
             // for now for now i'm just going to forward to a known DNS server, see what happens
             int sent = state.UdpOut.SendTo(bytes, 0, messageLength, SocketFlags.None, new IPEndPoint(IPAddress.Parse(state.Server.config.Forwarder), 53));
-            Console.WriteLine("I know nothing, forwarding on");
 
             state.UdpOut.BeginReceiveFrom(state.ResponseBuffer, state.ResponsePosition, state.ResponseBuffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveResponseCallback), state);
         }
