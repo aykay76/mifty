@@ -22,10 +22,7 @@ namespace mifty
                 // TODO: link the response with the original request through state somehow
                 // TODO: when decoding labels, don't forget pointers - per section 4.1.4 of RFC1035
                 Console.Write($"{bytes[i]:X2} ");
-                if (i % 10 == 9)
-                {
-                    Console.WriteLine();
-                }
+                if (i % 16 == 15) Console.WriteLine();
             }
             Console.WriteLine();
 
@@ -56,22 +53,6 @@ namespace mifty
             EndPoint dummyEndpoint = new IPEndPoint(IPAddress.Any, 0);
             udp.BeginReceiveFrom(state.Buffer, state.Position, state.Buffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveCallback), state);
 
-            // TODO: start decoding the message
-            //                                 1  1  1  1  1  1
-            //   0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
-            // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            // |                      ID                       |
-            // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            // |QR|   Opcode  |AA|TC|RD|RA|   Z    |   RCODE   |
-            // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            // |                    QDCOUNT                    |
-            // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            // |                    ANCOUNT                    |
-            // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            // |                    NSCOUNT                    |
-            // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            // |                    ARCOUNT                    |
-            // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+            
             Console.WriteLine("Message received:");
             for (int i = 0; i < messageLength; i++)
             {
@@ -80,6 +61,7 @@ namespace mifty
                 // TODO: decode names and the other fields, output nice logs
                 // TODO: when decoding labels, don't forget pointers - per section 4.1.4 of RFC1035
                 Console.Write($"{bytes[i]:X2} ");
+                if (i % 16 == 15) Console.WriteLine();
             }
             Console.WriteLine();
 
@@ -88,36 +70,6 @@ namespace mifty
             Console.WriteLine("I know nothing, forwarding on");
 
             state.UdpOut.BeginReceiveFrom(state.ResponseBuffer, state.ResponsePosition, state.ResponseBuffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveResponseCallback), state);
-
-            // for now i'm just going to build a referral for everything to my DNS server, then i can snoop
-            // this could be configurable in the future as a flag to passthrough or do stuff
-            // byte[] response = new byte[512];
-            // response[0] = message[0];
-            // response[1] = message[1];
-            // response[2] = 0x80 | (Opcode.Status << 3) | 1; response[3] = 0x80 | ResponseCode.Success;
-            // response[4] = response[5] = 1; // QD count
-            // response[6] = 0; response[7] = 1; // AN count
-            // response[8] = 0; response[9] = 0; // NS count
-            // response[10] = 0; response[11] = 0; // AR count
-
-            // response[12] = 0; // no name
-            // response[13] = 0; response[14] = 2; // A record
-            // response[15] = 0; response[16] = 1; // IN class
-            // response[17] = response[18] = response[19] = response[20] = 0; // TTL = 0
-            // response[21] = 0; response[22] = 4;
-            // response[23] = 192;
-            // response[24] = 168;
-            // response[25] = 1;
-            // response[26] = 254;
-            // int sent = udp.SendTo(response, 0, 27, SocketFlags.None, remoteEndpoint);
-
-            // Console.WriteLine($"Response sent in {sent} bytes.");
-            // for (int i = 0; i < 27; i++)
-            // {
-            //     // TODO: when decoding labels, don't forget pointers - per section 4.1.4 of RFC1035
-            //     Console.Write($"{response[i]:X2} ");
-            // }
-            // Console.WriteLine();
         }
 
         public Server WithConfig(ServerConfig serverConfig)
