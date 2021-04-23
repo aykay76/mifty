@@ -17,9 +17,15 @@ namespace mifty
             byte[] bytes = new byte[messageLength];
             Array.Copy(state.ResponseBuffer, bytes, messageLength);
 
+            IPEndPoint forwarder = remoteEndpoint as IPEndPoint;
+
+            if (state.Server.config.LogLevel == LogLevel.Info)
+            {
+                Console.WriteLine($"Response received from: {forwarder.Address.ToString()}:{forwarder.Port}");
+            }
+
             if (state.Server.config.LogLevel == LogLevel.Debug)
             {
-                Console.WriteLine("Response received from forwarder:");
                 for (int i = 0; i < messageLength; i++)
                 {
                     // TODO: link the response with the original request through state somehow
@@ -49,14 +55,19 @@ namespace mifty
             Array.Copy(state.Buffer, bytes, messageLength);
             Message message = new Message(bytes);
 
-            state.Clients[message.ID] = remoteEndpoint as IPEndPoint;
+            IPEndPoint clientEndpoint = remoteEndpoint as IPEndPoint;
+            state.Clients[message.ID] = clientEndpoint;
 
             EndPoint dummyEndpoint = new IPEndPoint(IPAddress.Any, 0);
             udp.BeginReceiveFrom(state.Buffer, state.Position, state.Buffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveCallback), state);
 
+            if (state.Server.config.LogLevel == LogLevel.Info)
+            {
+                Console.WriteLine($"[INFO] Request received from {clientEndpoint.Address.ToString()}:{clientEndpoint.Port}");
+            }
+
             if (state.Server.config.LogLevel == LogLevel.Debug)
             {
-                Console.WriteLine("Message received:");
                 for (int i = 0; i < messageLength; i++)
                 {
                     // TODO: decide what i'm going to do here
