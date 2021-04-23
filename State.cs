@@ -16,6 +16,7 @@ namespace mifty
         public Server Server { get; set; }
 
         // TODO: I might replace this with a more rich object than just endpoint if I need to store more information
+        //       for example, add timestamp so that I can measure latency
         public Dictionary<ushort, IPEndPoint> Clients { get; set; }
 
         public State()
