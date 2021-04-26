@@ -45,6 +45,19 @@ namespace mifty
         // TODO: add methods to serialise/deserialise, or maybe not as it adds overhead?
         private byte[] bytes;
 
+        private Answer ParseAnswer(ref int i)
+        {
+            Answer answer = new Answer();
+            answer.Name = ParseName(ref i);
+            answer.Type = (ushort)((ushort)(bytes[i++] << 8) | (ushort)bytes[i++]);
+            answer.Class = (ushort)((ushort)bytes[i++] << 8 | (ushort)bytes[i++]);
+            answer.TimeToLive = (uint)bytes[i++] << 24 | (uint)bytes[i++] << 16 | (uint)bytes[i++] << 8 | (uint)bytes[i++];
+            answer.Length = (ushort)((ushort)bytes[i++] << 8 | (ushort)bytes[i++]);
+            answer.DataPos = i;
+            i += answer.Length;
+            return answer;
+        }
+
         public Message(byte[] message)
         {
             bytes = message;
@@ -77,43 +90,22 @@ namespace mifty
             Answers = new List<Answer>();
             for (int a = 0; a < AnswerCount; a++)
             {
-                Answer answer = new Answer();
-                answer.Name = ParseName(ref i);
-                answer.Type = (ushort)((ushort)(bytes[i++] << 8) | (ushort)bytes[i++]);
-                answer.Class = (ushort)((ushort)bytes[i++] << 8 | (ushort)bytes[i++]);
-                answer.TimeToLive = (uint)bytes[i++] << 24 | (uint)bytes[i++] << 16 | (uint)bytes[i++] << 8 | (uint)bytes[i++];
-                answer.Length = (ushort)((ushort)bytes[i++] << 8 | (ushort)bytes[i++]);
-                answer.DataPos = i;
-                i += answer.Length;
+                Answer answer = ParseAnswer(ref i);
                 Answers.Add(answer);
             }
 
             Authority = new List<Answer>();
             for (int a = 0; a < NameServerCount; a++)
             {
-                Answer answer = new Answer();
-                answer.Name = ParseName(ref i);
-                answer.Type = (ushort)((ushort)(bytes[i++] << 8) | (ushort)bytes[i++]);
-                answer.Class = (ushort)((ushort)bytes[i++] << 8 | (ushort)bytes[i++]);
-                answer.TimeToLive = (uint)bytes[i++] << 24 | (uint)bytes[i++] << 16 | (uint)bytes[i++] << 8 | (uint)bytes[i++];
-                answer.Length = (ushort)((ushort)bytes[i++] << 8 | (ushort)bytes[i++]);
-                answer.DataPos = i;
-                i += answer.Length;
-                Authority.Add(answer);
+                Answer answer = ParseAnswer(ref i);
+                Answers.Add(answer);
             }
 
             AdditionalRecords = new List<Answer>();
             for (int a = 0; a < AdditionalRecordCount; a++)
             {
-                Answer answer = new Answer();
-                answer.Name = ParseName(ref i);
-                answer.Type = (ushort)((ushort)(bytes[i++] << 8) | (ushort)bytes[i++]);
-                answer.Class = (ushort)((ushort)bytes[i++] << 8 | (ushort)bytes[i++]);
-                answer.TimeToLive = (uint)bytes[i++] << 24 | (uint)bytes[i++] << 16 | (uint)bytes[i++] << 8 | (uint)bytes[i++];
-                answer.Length = (ushort)((ushort)bytes[i++] << 8 | (ushort)bytes[i++]);
-                answer.DataPos = i;
-                i += answer.Length;
-                AdditionalRecords.Add(answer);
+                Answer answer = ParseAnswer(ref i);
+                Answers.Add(answer);
             }
         }
 
