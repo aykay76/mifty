@@ -17,7 +17,7 @@ namespace mifty
 
         // TODO: I might replace this with a more rich object than just endpoint if I need to store more information
         //       for example, add timestamp so that I can measure latency
-        public Dictionary<ushort, IPEndPoint> Clients { get; set; }
+        public Dictionary<ushort, Client> Clients { get; set; }
 
         public State()
         {
@@ -27,7 +27,7 @@ namespace mifty
             ResponseBuffer = new byte[512];
             ResponsePosition = 0;
 
-            Clients = new Dictionary<ushort, IPEndPoint>();
+            Clients = new Dictionary<ushort, Client>();
         }
     }
 }
