@@ -115,6 +115,10 @@ namespace mifty
             state.Server = this;
             state.Udp = udp;
 
+            // TODO: need to decide whether to include this as an option.
+            //       On the one hand opening a new socket for every request could lead to port exhaustion on a busy network
+            //       On the other hand, using one connection the requests need to be synchronised to avoid buffer overlaps
+            //       On the third hand I wish I had, I could have a pool of connections (configurable) which could be utilised based on some busy state flag being clear?
             // create a socket that will be used to forward requests on
             // state.UdpOut = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
             // state.UdpOut.Bind(new IPEndPoint(IPAddress.Parse(config.ResolverAddress), 0));
