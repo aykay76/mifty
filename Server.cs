@@ -8,6 +8,7 @@ namespace mifty
     {
         ServerConfig config = null;
         State state = new State();
+        NaughtyList naughtyList;
 
         public static void ReceiveCallback(IAsyncResult asyncResult)
         {
@@ -24,16 +25,13 @@ namespace mifty
                 Array.Copy(state.Buffer, bytes, messageLength);
                 Message message = new Message(bytes);
 
-                Client client = new Client();
-                client.Server = state.Server;
-                client.RemoteEndpoint = remoteEndpoint as IPEndPoint;
-                state.Clients[message.ID] = client;
+                // TODO: do some basic checks like does the message contain at least one query?
+                IPEndPoint remoteIpEndpoint = remoteEndpoint as IPEndPoint;
 
                 if (state.Server.config.LogLevel >= LogLevel.Info)
                 {
-                    Console.WriteLine($"[INFO] Request received from {client.RemoteEndpoint.Address.ToString()}:{client.RemoteEndpoint.Port}; {message.Queries[0].Name}");
+                    Console.WriteLine($"[INFO] Request received from {remoteIpEndpoint.Address.ToString()}:{remoteIpEndpoint.Port}; {message.Queries[0].Name}");
                 }
-
                 if (state.Server.config.LogLevel >= LogLevel.Debug)
                 {
                     for (int i = 0; i < messageLength; i++)
@@ -47,14 +45,37 @@ namespace mifty
                     }
                     Console.WriteLine();
                 }
+                if (state.Server.config.LogLevel >= LogLevel.Trace)
+                {
+                    Console.WriteLine("[TRACE] Checking naughty list, just once");
+                }
 
-                client.UdpOut = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-                client.UdpOut.Bind(new IPEndPoint(IPAddress.Parse(state.Server.config.ResolverAddress), 0));
+                if (state.Server.naughtyList.Contains(message.Queries[0].Name))
+                {
+                    if (state.Server.config.LogLevel >= LogLevel.Info)
+                    {
+                        Console.WriteLine($"[INFO] Not forwarding or responding to {message.Queries[0].Name} - it's on the naughty list!");
+                    }
+                }
+                else
+                {
+                    if (state.Server.config.LogLevel >= LogLevel.Trace)
+                    {
+                        Console.WriteLine("[TRACE] Creating client and sending request to forwarder");
+                    }
 
-                // for now for now i'm just going to forward to a known DNS server, see what happens
-                int sent = client.UdpOut.SendTo(bytes, 0, messageLength, SocketFlags.None, new IPEndPoint(IPAddress.Parse(state.Server.config.Forwarder), 53));
+                    Client client = new Client();
+                    client.Server = state.Server;
+                    client.RemoteEndpoint = remoteIpEndpoint;
+                    state.Clients[message.ID] = client;
 
-                client.UdpOut.BeginReceiveFrom(client.ResponseBuffer, client.ResponsePosition, client.ResponseBuffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveResponseCallback), client);
+                    client.UdpOut = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                    client.UdpOut.Bind(new IPEndPoint(IPAddress.Parse(state.Server.config.ResolverAddress), 0));
+
+                    // for now for now i'm just going to forward to a known DNS server, see what happens
+                    int sent = client.UdpOut.SendTo(bytes, 0, messageLength, SocketFlags.None, new IPEndPoint(IPAddress.Parse(state.Server.config.Forwarder), 53));
+                    client.UdpOut.BeginReceiveFrom(client.ResponseBuffer, client.ResponsePosition, client.ResponseBuffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveResponseCallback), client);
+                }
             }
             catch (SocketException)
             {
@@ -62,6 +83,10 @@ namespace mifty
             }
 
             // receive another request
+            if (state.Server.config.LogLevel >= LogLevel.Trace)
+            {
+                Console.WriteLine("[TRACE] Preparing to receive again...");
+            }
             udp.BeginReceiveFrom(state.Buffer, state.Position, state.Buffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveCallback), state);
         }
 
@@ -101,6 +126,12 @@ namespace mifty
         public Server WithConfig(ServerConfig serverConfig)
         {
             config = serverConfig;
+            return this;
+        }
+
+        public Server WithNaughtyList(NaughtyList naughtyList)
+        {
+            this.naughtyList = naughtyList;
             return this;
         }
 

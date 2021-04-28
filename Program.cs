@@ -51,17 +51,21 @@ namespace mifty
                                   exitEvent.Set();
                               };
 
+            NaughtyList naughtyList = NaughtyList.FromFile("dnscrypt-proxy-blacklist.txt");
+
             // TODO: add a server config and associated command line arguments
             // for what this thing will do - addresses to bind to etc.
             Server server = new Server();
             server.WithConfig(new ServerConfig {
                 // ServerAddress = "172.22.160.1",
                 ServerAddress = "127.0.0.1",
-                ResolverAddress = "192.168.1.71",
+                ResolverAddress = "192.168.1.179",
                 ServerPort = 53,
                 Forwarder = "192.168.1.254",
-                LogLevel = LogLevel.Debug
-            }).Start();
+                LogLevel = LogLevel.Trace
+            })
+            .WithNaughtyList(naughtyList)
+            .Start();
 
             Console.WriteLine("Hello World!");
             exitEvent.WaitOne();
