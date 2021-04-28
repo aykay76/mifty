@@ -51,7 +51,7 @@ namespace mifty
                                   exitEvent.Set();
                               };
 
-            NaughtyList naughtyList = NaughtyList.FromFile("dnscrypt-proxy-blacklist.txt");
+            NaughtyList naughtyList = NaughtyList.FromFile("dnscrypt-proxy.blacklist.txt");
 
             // TODO: add a server config and associated command line arguments
             // for what this thing will do - addresses to bind to etc.
