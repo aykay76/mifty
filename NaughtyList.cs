@@ -26,7 +26,6 @@ namespace mifty
                     int i = indices[c1][c2];
                     do
                     {
-                        System.Console.WriteLine($"Comparing {host} and {hosts[i]}");
                         c = string.Compare(host, hosts[i]);
                         if (c == 0) return true;
                         i++;
