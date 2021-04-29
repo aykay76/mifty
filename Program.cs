@@ -59,7 +59,7 @@ namespace mifty
             server.WithConfig(new ServerConfig {
                 // ServerAddress = "172.22.160.1",
                 ServerAddress = "127.0.0.1",
-                ResolverAddress = "192.168.1.179",
+                ResolverAddress = "192.168.1.71",
                 ServerPort = 53,
                 Forwarder = "192.168.1.254",
                 LogLevel = LogLevel.Trace

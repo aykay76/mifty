@@ -76,11 +76,7 @@ namespace mifty
             NameServerCount = (ushort)((ushort)(bytes[8] << 8) | (ushort)bytes[9]);
             AdditionalRecordCount = (ushort)((ushort)(bytes[10] << 8) | (ushort)bytes[11]);
 
-            Console.WriteLine($"ID     : {ID:X4}");
-            Console.WriteLine($"Queries: {QueryCount}");
-            Console.WriteLine($"Answers: {AnswerCount}");
-            Console.WriteLine($"NSCount: {NameServerCount}");
-            Console.WriteLine($"ARCount: {AdditionalRecordCount}");
+            Console.WriteLine($"ID: {ID:X4}, Q: {QueryCount}, A: {AnswerCount}, N: {NameServerCount}, R: {AdditionalRecordCount}");
 
             //                                 1  1  1  1  1  1
             //   0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5

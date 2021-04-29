@@ -1,6 +1,7 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
+using System.Threading;
 
 namespace mifty
 {
@@ -23,15 +24,7 @@ namespace mifty
                 // take a copy of the buffer and start receiving again ASAP to service another customer
                 byte[] bytes = new byte[messageLength];
                 Array.Copy(state.Buffer, bytes, messageLength);
-                Message message = new Message(bytes);
 
-                // TODO: do some basic checks like does the message contain at least one query?
-                IPEndPoint remoteIpEndpoint = remoteEndpoint as IPEndPoint;
-
-                if (state.Server.config.LogLevel >= LogLevel.Info)
-                {
-                    Console.WriteLine($"[INFO] Request received from {remoteIpEndpoint.Address.ToString()}:{remoteIpEndpoint.Port}; {message.Queries[0].Name}");
-                }
                 if (state.Server.config.LogLevel >= LogLevel.Debug)
                 {
                     for (int i = 0; i < messageLength; i++)
@@ -44,6 +37,16 @@ namespace mifty
                         if (i % 16 == 15) Console.WriteLine();
                     }
                     Console.WriteLine();
+                }
+
+                Message message = new Message(bytes);
+
+                // TODO: do some basic checks like does the message contain at least one query?
+                IPEndPoint remoteIpEndpoint = remoteEndpoint as IPEndPoint;
+
+                if (state.Server.config.LogLevel >= LogLevel.Info)
+                {
+                    Console.WriteLine($"[INFO] Request received from {remoteIpEndpoint.Address.ToString()}:{remoteIpEndpoint.Port}; {message.Queries[0].Name}");
                 }
                 if (state.Server.config.LogLevel >= LogLevel.Trace)
                 {
@@ -87,7 +90,30 @@ namespace mifty
             {
                 Console.WriteLine("[TRACE] Preparing to receive again...");
             }
-            udp.BeginReceiveFrom(state.Buffer, state.Position, state.Buffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveCallback), state);
+
+            int retryCount = 5;
+            int retryTime = 1000;
+            while (retryCount > 0)
+            {
+                try
+                {
+                    udp.BeginReceiveFrom(state.Buffer, state.Position, state.Buffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveCallback), state);
+
+                    // no need to retry if above doesn't fail
+                    retryCount = 0;
+                }
+                catch (SocketException)
+                {
+                    if (state.Server.config.LogLevel >= LogLevel.Debug)
+                    {
+                        Console.WriteLine($"[DEBUG] Something went wrong, retrying in {retryTime}ms.");
+                    }
+                    retryCount--;
+                    retryTime *= 2;
+                }
+
+                Thread.Sleep(retryTime);
+            }
         }
 
         public static void ReceiveResponseCallback(IAsyncResult asyncResult)
@@ -99,14 +125,6 @@ namespace mifty
             byte[] bytes = new byte[messageLength];
             Array.Copy(client.ResponseBuffer, bytes, messageLength);
 
-            Message message = new Message(bytes);
-            IPEndPoint forwarder = remoteEndpoint as IPEndPoint;
-
-            if (client.Server.config.LogLevel >= LogLevel.Info)
-            {
-                Console.WriteLine($"Response received from: {forwarder.Address.ToString()}:{forwarder.Port}");
-            }
-
             if (client.Server.config.LogLevel >= LogLevel.Debug)
             {
                 for (int i = 0; i < messageLength; i++)
@@ -117,6 +135,14 @@ namespace mifty
                     if (i % 16 == 15) Console.WriteLine();
                 }
                 Console.WriteLine();
+            }
+
+            Message message = new Message(bytes);
+            IPEndPoint forwarder = remoteEndpoint as IPEndPoint;
+
+            if (client.Server.config.LogLevel >= LogLevel.Info)
+            {
+                Console.WriteLine($"Response received from: {forwarder.Address.ToString()}:{forwarder.Port}");
             }
 
             // find the right client
