@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace mifty
@@ -45,6 +46,26 @@ namespace mifty
         // TODO: add methods to serialise/deserialise, or maybe not as it adds overhead?
         private byte[] bytes;
 
+        //                                 1  1  1  1  1  1
+        //   0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
+        // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+        // |                                               |
+        // /                                               /
+        // /                      NAME                     /
+        // |                                               |
+        // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+        // |                      TYPE                     |
+        // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+        // |                     CLASS                     |
+        // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+        // |                      TTL                      |
+        // |                                               |
+        // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
+        // |                   RDLENGTH                    |
+        // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--|
+        // /                     RDATA                     /
+        // /                                               /
+        // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
         private Answer ParseAnswer(ref int i)
         {
             Answer answer = new Answer();
@@ -57,6 +78,23 @@ namespace mifty
             answer.DataPos = i;
             i += answer.Length;
             return answer;
+        }
+
+        public static Message FromFile(string filename)
+        {
+            string rawContent = File.ReadAllText(filename);
+            rawContent = rawContent.Replace("\r\n", "").Replace(" ", "");
+
+            byte[] bytes = new byte[rawContent.Length / 2];
+
+            for (int i = 0; i < rawContent.Length; i += 2)
+            {
+                byte b = Convert.ToByte(rawContent.Substring(i, 2), 16);
+                bytes[i / 2] = b;
+            }
+
+            Message message = new Message(bytes);
+            return message;
         }
 
         public Message(byte[] message)
@@ -100,26 +138,6 @@ namespace mifty
                 Queries.Add(query);
             }
 
-            //                                 1  1  1  1  1  1
-            //   0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
-            // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            // |                                               |
-            // /                                               /
-            // /                      NAME                     /
-            // |                                               |
-            // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            // |                      TYPE                     |
-            // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            // |                     CLASS                     |
-            // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            // |                      TTL                      |
-            // |                                               |
-            // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
-            // |                   RDLENGTH                    |
-            // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--|
-            // /                     RDATA                     /
-            // /                                               /
-            // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
             Answers = new List<Answer>();
             for (int a = 0; a < AnswerCount; a++)
             {
