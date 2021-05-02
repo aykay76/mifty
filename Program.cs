@@ -9,7 +9,7 @@ namespace mifty
     {
         static void Main(string[] args)
         {
-            Message message = Message.FromFile("answer.txt");
+            // Message message = Message.FromFile("answer.txt");
             // temporary, i want to do some analysis of the block list to see how evenly distributed the entries are
             // Dictionary<char, Dictionary<char, int>> frequencies = new Dictionary<char, Dictionary<char, int>>();
             // StreamReader reader = new StreamReader("dnscrypt-proxy.blacklist.txt");
@@ -59,7 +59,7 @@ namespace mifty
             Server server = new Server();
             server.WithConfig(new ServerConfig {
                 // ServerAddress = "172.22.160.1",
-                ServerAddress = "127.0.0.1",
+                ServerAddress = "::1",
                 ResolverAddress = "192.168.1.71",
                 ServerPort = 53,
                 Forwarder = "192.168.1.254",

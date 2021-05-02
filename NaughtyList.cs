@@ -13,6 +13,8 @@ namespace mifty
             indices = new Dictionary<char, Dictionary<char, int>>();
         }
 
+        // TODO: rework this to cater for the fact that we might not be searching against a specific host name, if we have an entire domain on the naughty list
+        // we should match anything within that domain
         public bool Contains(string host)
         {
             char c1 = host[0];

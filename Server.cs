@@ -15,8 +15,8 @@ namespace mifty
         {
             State state = (State)asyncResult.AsyncState;
             Socket udp = state.Udp;
-            EndPoint dummyEndpoint = new IPEndPoint(IPAddress.Any, 0);
-            EndPoint remoteEndpoint = new IPEndPoint(IPAddress.Any, 0);
+            EndPoint dummyEndpoint = new IPEndPoint(IPAddress.IPv6Any, 0);
+            EndPoint remoteEndpoint = new IPEndPoint(IPAddress.IPv6Any, 0);
             try
             {
                 int messageLength = udp.EndReceiveFrom(asyncResult, ref remoteEndpoint);
@@ -72,7 +72,7 @@ namespace mifty
                     client.RemoteEndpoint = remoteIpEndpoint;
                     state.Clients[message.ID] = client;
 
-                    client.UdpOut = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                    client.UdpOut = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
                     client.UdpOut.Bind(new IPEndPoint(IPAddress.Parse(state.Server.config.ResolverAddress), 0));
 
                     // for now for now i'm just going to forward to a known DNS server, see what happens
@@ -166,7 +166,7 @@ namespace mifty
             // TODO: add TCP support
 
             // create a socket that will accept requests from the "client network"
-            Socket udp = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+            Socket udp = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
             udp.Bind(new IPEndPoint(IPAddress.Parse(config.ServerAddress), config.ServerPort));
 
             state.Server = this;
@@ -181,7 +181,7 @@ namespace mifty
             // state.UdpOut.Bind(new IPEndPoint(IPAddress.Parse(config.ResolverAddress), 0));
 
             // and begin...
-            EndPoint dummyEndpoint = new IPEndPoint(IPAddress.Any, 0);
+            EndPoint dummyEndpoint = new IPEndPoint(IPAddress.IPv6Any, 0);
             udp.BeginReceiveFrom(state.Buffer, state.Position, state.Buffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveCallback), state);
         }
 
