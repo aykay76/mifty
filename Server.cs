@@ -179,6 +179,19 @@ namespace mifty
             Socket udp = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
             udp.Bind(new IPEndPoint(IPAddress.Parse(config.ListenAddress), config.ListenPort));
 
+            // Set the SIO_UDP_CONNRESET ioctl to true for this UDP socket. If this UDP socket
+            //    ever sends a UDP packet to a remote destination that exists but there is
+            //    no socket to receive the packet, an ICMP port unreachable message is returned
+            //    to the sender. By default, when this is received the next operation on the
+            //    UDP socket that send the packet will receive a SocketException. The native
+            //    (Winsock) error that is received is WSAECONNRESET (10054). Since we don't want
+            //    to wrap each UDP socket operation in a try/except, we'll disable this error
+            //    for the socket with this ioctl call. IOControl is analogous to the WSAIoctl method of Winsock 2
+            // Credit: https://www.winsocketdotnetworkprogramming.com/clientserversocketnetworkcommunication8.html
+            byte[] inValue = new byte[] { 0, 0, 0, 0 }; // == false
+            byte[] outValue = new byte[] { 0, 0, 0, 0 }; // initialize to 0
+            udp.IOControl(-1744830452, inValue, null);
+
             state.Server = this;
             state.Udp = udp;
 
