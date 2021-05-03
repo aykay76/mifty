@@ -172,7 +172,8 @@ namespace mifty
                 if ((partLength & 0xc0) == 0xc0)
                 {
                     // pointer
-                    int j = bytes[i++];
+                    int j = ((partLength & 0x3f) << 8) | bytes[i++];
+
                     return ParseName(ref j);
                 }
                 else
