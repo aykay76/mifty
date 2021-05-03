@@ -1,0 +1,7 @@
+{
+    "ListenAddress": "::1",
+    "ResolverAddress": "2a00:23c4:33a4:101:2153:d290:8d93:b7e6",
+    "ListenPort": 53,
+    "Forwarder": "fe80::e675:dcff:fea5:3ada%4",
+    "LogLevel": 6
+}

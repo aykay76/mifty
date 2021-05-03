@@ -9,7 +9,7 @@ namespace mifty
     {
         static void Main(string[] args)
         {
-            Message message = Message.FromFile("badanswer.txt");
+            // Message message = Message.FromFile("badanswer.txt");
 
             // temporary, i want to do some analysis of the block list to see how evenly distributed the entries are
             // Dictionary<char, Dictionary<char, int>> frequencies = new Dictionary<char, Dictionary<char, int>>();
@@ -59,18 +59,20 @@ namespace mifty
             // for what this thing will do - addresses to bind to etc.
 
             // TODO: configure secondary forwarder for greater resilience, and secondary server address if this is a multi-homed server
-
+Console.WriteLine();
             Server server = new Server();
-            server.WithConfig(new ServerConfig {
-                // ListenAddress = "172.22.160.1",
-                ListenAddress = "::1",
-                ResolverAddress = "2a00:23c4:33a4:101:2153:d290:8d93:b7e6",
-                ListenPort = 53,
-                Forwarder = "fe80::e675:dcff:fea5:3ada%4",
-                LogLevel = LogLevel.Trace
-            })
-            .WithNaughtyList(naughtyList)
-            .Start();
+            server.WithConfig(ServerConfig.FromFile(Environment.CurrentDirectory + "\\windows.json")).WithNaughtyList(naughtyList).Start();
+
+            // TODO: make this a command line arg with default
+            FileSystemWatcher watcher = new FileSystemWatcher(Environment.CurrentDirectory, "*.json");
+            watcher.Changed += (o,e) => {
+                // wait a bit in case of race condition, it doesn't matter if it takes half a second to reload configuration
+                Thread.Sleep(500);
+                Console.WriteLine("Configuration changed, restarting server");
+                ServerConfig config = ServerConfig.FromFile(Environment.CurrentDirectory + "\\windows.json");
+                server.WithConfig(config).Restart();
+            };
+            watcher.EnableRaisingEvents = true;
 
             Console.WriteLine("Hello World!");
             exitEvent.WaitOne();

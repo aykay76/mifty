@@ -79,6 +79,20 @@ namespace mifty
                     client.UdpOut.BeginReceiveFrom(client.ResponseBuffer, client.ResponsePosition, client.ResponseBuffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveResponseCallback), client);
                 }
             }
+            catch (ArgumentException)
+            {
+                if (state.Server.config.LogLevel >= LogLevel.Debug)
+                {
+                    Console.WriteLine("[DEBUG] Threading issue, server restarted due to configuration change?");
+                }
+            }
+            catch (ObjectDisposedException)
+            {
+                if (state.Server.config.LogLevel >= LogLevel.Debug)
+                {
+                    Console.WriteLine("[DEBUG] Object disposed, server restarted due to configuration change?");
+                }
+            }
             catch (SocketException ex)
             {
                 if (state.Server.config.LogLevel >= LogLevel.Debug)
@@ -169,7 +183,11 @@ namespace mifty
             return this;
         }
 
-        // TODO: add restart method for if config changes we can re-listen without completely restarting the service
+        public void Restart()
+        {
+            Stop();
+            Start();
+        }
 
         public void Start()
         {
