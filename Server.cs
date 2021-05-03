@@ -14,12 +14,11 @@ namespace mifty
         public static void ReceiveCallback(IAsyncResult asyncResult)
         {
             State state = (State)asyncResult.AsyncState;
-            Socket udp = state.Udp;
             EndPoint dummyEndpoint = new IPEndPoint(IPAddress.IPv6Any, 0);
             EndPoint remoteEndpoint = new IPEndPoint(IPAddress.IPv6Any, 0);
             try
             {
-                int messageLength = udp.EndReceiveFrom(asyncResult, ref remoteEndpoint);
+                int messageLength = state.Udp.EndReceiveFrom(asyncResult, ref remoteEndpoint);
 
                 // take a copy of the buffer and start receiving again ASAP to service another customer
                 byte[] bytes = new byte[messageLength];
@@ -100,7 +99,7 @@ namespace mifty
             {
                 try
                 {
-                    udp.BeginReceiveFrom(state.Buffer, state.Position, state.Buffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveCallback), state);
+                    state.Udp.BeginReceiveFrom(state.Buffer, state.Position, state.Buffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveCallback), state);
 
                     // no need to retry if above doesn't fail
                     retryCount = 0;
@@ -200,6 +199,11 @@ namespace mifty
         {
             state.Udp.Close();
             // state.UdpOut.Close();
+
+            foreach (Client client in state.Clients.Values)
+            {
+                client.UdpOut.Close();
+            }
         }
     }
 }
