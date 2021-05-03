@@ -56,13 +56,16 @@ namespace mifty
 
             // TODO: add a server config and associated command line arguments
             // for what this thing will do - addresses to bind to etc.
+
+            // TODO: configure secondary forwarder for greater resilience, and secondary server address if this is a multi-homed server
+
             Server server = new Server();
             server.WithConfig(new ServerConfig {
-                // ServerAddress = "172.22.160.1",
-                ServerAddress = "::1",
-                ResolverAddress = "192.168.1.71",
-                ServerPort = 53,
-                Forwarder = "192.168.1.254",
+                // ListenAddress = "172.22.160.1",
+                ListenAddress = "::1",
+                ResolverAddress = "2a00:23c4:33a4:101:2153:d290:8d93:b7e6",
+                ListenPort = 53,
+                Forwarder = "fe80::e675:dcff:fea5:3ada%4",
                 LogLevel = LogLevel.Trace
             })
             .WithNaughtyList(naughtyList)

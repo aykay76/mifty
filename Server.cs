@@ -80,9 +80,12 @@ namespace mifty
                     client.UdpOut.BeginReceiveFrom(client.ResponseBuffer, client.ResponsePosition, client.ResponseBuffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveResponseCallback), client);
                 }
             }
-            catch (SocketException)
+            catch (SocketException ex)
             {
-
+                if (state.Server.config.LogLevel >= LogLevel.Debug)
+                {
+                    Console.WriteLine(ex.ToString());
+                }
             }
 
             // receive another request
@@ -102,11 +105,12 @@ namespace mifty
                     // no need to retry if above doesn't fail
                     retryCount = 0;
                 }
-                catch (SocketException)
+                catch (SocketException ex)
                 {
                     if (state.Server.config.LogLevel >= LogLevel.Debug)
                     {
                         Console.WriteLine($"[DEBUG] Something went wrong, retrying in {retryTime}ms.");
+                        Console.WriteLine(ex.ToString());
                     }
                     retryCount--;
                     retryTime *= 2;
@@ -114,13 +118,18 @@ namespace mifty
 
                 Thread.Sleep(retryTime);
             }
+
+            if (retryCount < 0)
+            {
+                // TODO: something went badly wrong, shutdown
+            }
         }
 
         public static void ReceiveResponseCallback(IAsyncResult asyncResult)
         {
             Client client = asyncResult.AsyncState as Client;
 
-            EndPoint remoteEndpoint = new IPEndPoint(IPAddress.Any, 0);
+            EndPoint remoteEndpoint = new IPEndPoint(IPAddress.IPv6Any, 0);
             int messageLength = client.UdpOut.EndReceiveFrom(asyncResult, ref remoteEndpoint);
             byte[] bytes = new byte[messageLength];
             Array.Copy(client.ResponseBuffer, bytes, messageLength);
@@ -161,13 +170,15 @@ namespace mifty
             return this;
         }
 
+        // TODO: add restart method for if config changes we can re-listen without completely restarting the service
+
         public void Start()
         {
             // TODO: add TCP support
 
             // create a socket that will accept requests from the "client network"
             Socket udp = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
-            udp.Bind(new IPEndPoint(IPAddress.Parse(config.ServerAddress), config.ServerPort));
+            udp.Bind(new IPEndPoint(IPAddress.Parse(config.ListenAddress), config.ListenPort));
 
             state.Server = this;
             state.Udp = udp;
