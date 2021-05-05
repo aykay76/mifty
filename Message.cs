@@ -43,7 +43,6 @@ namespace mifty
         public List<Answer> Authority { get; set; }
         public List<Answer> AdditionalRecords { get; set; }
 
-        // TODO: add methods to serialise/deserialise, or maybe not as it adds overhead?
         private byte[] bytes;
 
         //                                 1  1  1  1  1  1

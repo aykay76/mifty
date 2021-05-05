@@ -55,9 +55,6 @@ namespace mifty
 
             NaughtyList naughtyList = NaughtyList.FromFile("dnscrypt-proxy.blacklist.txt");
 
-            // TODO: add a server config and associated command line arguments
-            // for what this thing will do - addresses to bind to etc.
-
             // TODO: configure secondary forwarder for greater resilience, and secondary server address if this is a multi-homed server
 Console.WriteLine();
             Server server = new Server();

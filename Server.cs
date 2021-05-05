@@ -28,10 +28,7 @@ namespace mifty
                 {
                     for (int i = 0; i < messageLength; i++)
                     {
-                        // TODO: decide what i'm going to do here
-                        // TODO: add configurable log levels
                         // TODO: decode names and the other fields, output nice logs
-                        // TODO: when decoding labels, don't forget pointers - per section 4.1.4 of RFC1035
                         Console.Write($"{bytes[i]:X2} ");
                         if (i % 16 == 15) Console.WriteLine();
                     }
@@ -152,7 +149,6 @@ namespace mifty
                 for (int i = 0; i < messageLength; i++)
                 {
                     // TODO: link the response with the original request through state somehow
-                    // TODO: when decoding labels, don't forget pointers - per section 4.1.4 of RFC1035
                     Console.Write($"{bytes[i]:X2} ");
                     if (i % 16 == 15) Console.WriteLine();
                 }
@@ -191,7 +187,7 @@ namespace mifty
 
         public void Start()
         {
-            // TODO: add TCP support
+            // TODO: add TCP support? maybe for future if doing zone transfers, otherwise it probably isn't needed
 
             // create a socket that will accept requests from the "client network"
             Socket udp = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
