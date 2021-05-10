@@ -49,7 +49,7 @@ namespace mifty
                     Console.WriteLine("[TRACE] Checking naughty list, just once");
                 }
 
-                if (state.Server.naughtyList.Contains(message.Queries[0].Name))
+                if (state.Server.naughtyList != null && state.Server.naughtyList.Contains(message.Queries[0].Name))
                 {
                     if (state.Server.config.LogLevel >= LogLevel.Info)
                     {
