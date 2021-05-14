@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 
@@ -8,7 +9,7 @@ namespace mifty
         public string ListenAddress { get; set; }
         public string ResolverAddress { get; set; }
         public int ListenPort { get; set; }
-        public string Forwarder { get; set; }
+        public List<string> Forwarders { get; set; }
         public int LogLevel { get; set; }
 
         public static ServerConfig FromFile(string filename)
