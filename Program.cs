@@ -9,6 +9,9 @@ namespace mifty
     {
         static void Main(string[] args)
         {
+            MasterFile file = MasterFile.FromFile("example.zone");
+            Console.WriteLine("read master file succcesfulllly");
+
             // Message message = Message.FromFile("badanswer.txt");
 
             // temporary, i want to do some analysis of the block list to see how evenly distributed the entries are

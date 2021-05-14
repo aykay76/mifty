@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -7,11 +8,11 @@ namespace mifty
     {
         public string Origin { get; set; }
         public int TTL { get; set; }
-        public Dictionary<string, MasterFileEntry> Entries { get; set; }
+        public List<MasterFileEntry> Entries { get; set; }
 
         public MasterFile()
         {
-            Entries = new Dictionary<string, MasterFileEntry>();
+            Entries = new List<MasterFileEntry>();
         }
 
         public static MasterFile FromFile(string filename)
@@ -22,9 +23,9 @@ namespace mifty
             string owner = string.Empty;
             int ttl = 3600;
             string @class = "IN"; // assume internet for now
+            string[] parts = null;
 
-            // TODO: refactor this to handle includes and full parsing of escaped text etc.
-            // see section 5 of RFC1035
+            // TODO: refactor this - i'm sure it can be a lot neater using tokenisation!
 
             // predominantly line based so should be one entry per line but beware the parentheses!
             for (int i = 0; i < lines.Length; i++)
@@ -33,7 +34,7 @@ namespace mifty
                 int semi = line.IndexOf(';');
                 if (semi != -1)
                 {
-                    line = line.Substring(0, semi);
+                    line = line.Substring(0, semi).Trim();
                 }
 
                 int bracket = line.IndexOf('(');
@@ -54,6 +55,7 @@ namespace mifty
                         if (nextLine.Contains(')'))
                         {
                             foundClose = true;
+                            line += nextLine.Substring(0, semi);
                         }
                     }
                 }
@@ -69,69 +71,91 @@ namespace mifty
                     masterFile.TTL = int.Parse(line.Substring(4).Trim());
                     ttl = masterFile.TTL;
                 }
+                else if (line.StartsWith("$INCLUDE"))
+                {
+                    // TODO: include the file and could be an option new origin
+                }
                 else
                 {
                     MasterFileEntry entry = new MasterFileEntry();
 
+                    // this often isn't specified so setting here to the default
+                    entry.TTL = ttl;
+
+                    parts = line.Split(new char[] { ' ', '\t'}, System.StringSplitOptions.RemoveEmptyEntries);
+
                     if (line[0] == ' ' || line[0] == '\t')
                     {
                         entry.Owner = owner;
-
-                        string[] parts = line.Split(new char[] { ' ', '\t'}, System.StringSplitOptions.RemoveEmptyEntries);
-                        if (parts.Length == 2)
-                        {
-                            // we have no TTL or class, just type and data
-                            entry.Type = parts[0];
-                            entry.Data = parts[1];
-                        }                      
-                        else if (parts.Length == 3)
-                        {
-                            // we have one optional TTL or class, plus type and data
-                            if (char.IsDigit(parts[0][0]))
-                            {
-                                // we have TTL
-                                ttl = int.Parse(parts[0]);
-                                entry.TTL = ttl;
-                            }
-                            else
-                            {
-                                // we have class
-                                @class = parts[0];
-                                entry.Class = @class;
-                            }
-
-                            entry.Type = parts[1];
-                            entry.Data = parts[2];
-                        }
-                        else if (parts.Length == 4)
-                        {
-                            // we have optional TTL, optional class, plus type and data
-                            if (char.IsDigit(parts[0][0]))
-                            {
-                                ttl = int.Parse(parts[0]);
-                                entry.TTL = ttl;
-                            }
-                            else
-                            {
-                                @class = parts[0];
-                                entry.Class = @class;
-                            }
-
-                            if (char.IsDigit(parts[1][0]))
-                            {
-                                ttl = int.Parse(parts[1]);
-                                entry.TTL = ttl;
-                            }
-                            else
-                            {
-                                @class = parts[1];
-                                entry.Class = @class;
-                            }
-
-                            entry.Type = parts[2];
-                            entry.Data = parts[3];
-                        }
                     }
+                    else
+                    {
+                        // suck out the owner then the rest will be <rr>
+                        entry.Owner = parts[0];
+                        string[] newParts = new string[parts.Length - 1];
+                        Array.Copy(parts, 1, newParts, 0, newParts.Length);
+                        parts = newParts;
+                    }
+
+                    // TODO: either parse fully or process SOA records differently.
+                    //       I think I need a parser to handle special characters but it's Friday evening
+                    //       this might wait until tomorrow.
+
+                    if (parts.Length == 2)
+                    {
+                        // we have no TTL or class, just type and data
+                        entry.Type = parts[0];
+                        entry.Data = parts[1];
+                    }                      
+                    else if (parts.Length == 3)
+                    {
+                        // we have one optional TTL or class, plus type and data
+                        if (char.IsDigit(parts[0][0]))
+                        {
+                            // we have TTL
+                            ttl = int.Parse(parts[0]);
+                            entry.TTL = ttl;
+                        }
+                        else
+                        {
+                            // we have class
+                            @class = parts[0];
+                            entry.Class = @class;
+                        }
+
+                        entry.Type = parts[1];
+                        entry.Data = parts[2];
+                    }
+                    else if (parts.Length == 4)
+                    {
+                        // we have optional TTL, optional class, plus type and data
+                        if (char.IsDigit(parts[0][0]))
+                        {
+                            ttl = int.Parse(parts[0]);
+                            entry.TTL = ttl;
+                        }
+                        else
+                        {
+                            @class = parts[0];
+                            entry.Class = @class;
+                        }
+
+                        if (char.IsDigit(parts[1][0]))
+                        {
+                            ttl = int.Parse(parts[1]);
+                            entry.TTL = ttl;
+                        }
+                        else
+                        {
+                            @class = parts[1];
+                            entry.Class = @class;
+                        }
+
+                        entry.Type = parts[2];
+                        entry.Data = parts[3];
+                    }
+
+                    masterFile.Entries.Add(entry);
                 }
             }
 
