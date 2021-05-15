@@ -9,5 +9,20 @@ namespace dsl
         {
             return "-x-";
         }
+
+        public bool IsInList(int[] tokenList)
+        {
+            if (tokenList == null)
+            {
+                return false;
+            }
+
+            foreach (var t in tokenList)
+            {
+                if (t == Type) return true;
+            }
+
+            return false;
+        }
     }
 }
