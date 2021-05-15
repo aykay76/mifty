@@ -9,6 +9,9 @@ namespace mifty
     {
         static void Main(string[] args)
         {
+            // ok, in the spirit of this project I grant that this parsing approach is not the fastest but it's one time to load the file(s)
+            // and it provides robustness to the process - I will optimise the in-memory representation of the master zone records so that
+            // this can be as fast as possible (maybe not quite faster than light but hopefully fast enough)
             dsl.MasterFileParser parser = new dsl.MasterFileParser();
             parser.Parse("example.zone");
 
