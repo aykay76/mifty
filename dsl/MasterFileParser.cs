@@ -71,7 +71,6 @@ namespace dsl
                     // ORIGIN, INCLUDE or TTL
                     GetToken();
 
-                    Console.WriteLine($"{token.Type} at {token.sr},{token.sc}");
                     if (token.Type == tokenOrigin)
                     {
                         origin = ParseOrigin();
