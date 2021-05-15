@@ -375,6 +375,11 @@ namespace dsl
                 }
                 else if (st.Token == '(')
                 {
+                    // TODO: I think don't ignore these, but i need to know when they will come
+                    // so far SOA and WKS records, but if they could come anywhere then
+                    // i need to cater for that
+                    // WKS is particularly problematic because it isn't fixed length fields
+
                     //token.Type = tokenOpenParentheses;
                     // i think just ignore parentheses
                     GetToken(skipWhitespace);
