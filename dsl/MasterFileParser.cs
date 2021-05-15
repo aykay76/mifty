@@ -44,6 +44,7 @@ namespace dsl
 
         string origin = string.Empty;
         int ttl = 3600;
+        string owner = string.Empty;
 
         public List<MasterFileEntry> Entries { get; set; }
 
@@ -74,6 +75,7 @@ namespace dsl
                     if (token.Type == tokenOrigin)
                     {
                         origin = ParseOrigin();
+                        owner = origin;
                     }
                     else if (token.Type == tokenTTL)
                     {
@@ -291,13 +293,19 @@ namespace dsl
                     // most likely a <rr> beginning with <owner>
                     //     <domain-name> [<class>] [<TTL>] <type> <RDATA>
                     entry.Owner = ParseDomainName();
+                    if (entry.Owner != "@")
+                    {
+                        // set default owner in case we reach another record that doesn't have an owner
+                        // see section 5.1
+                        owner = entry.Owner;
+                    }
                 }
             }
 
             // TODO: if the owner is @ or a label convert to FQDN using current origin
             if (entry.Owner == null)
             {
-                entry.Owner = origin;
+                entry.Owner = owner;
             }
             else if (entry.Owner == "@")
             {
