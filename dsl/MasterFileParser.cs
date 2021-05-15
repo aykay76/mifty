@@ -305,9 +305,11 @@ namespace dsl
             // TODO: if the owner is @ or a label convert to FQDN using current origin
             if (entry.Owner == null)
             {
+                // set last owner, could still be relative
                 entry.Owner = owner;
             }
-            else if (entry.Owner == "@")
+
+            if (entry.Owner == "@")
             {
                 entry.Owner = origin;
             }
