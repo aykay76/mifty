@@ -1,12 +1,13 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using mifty;
 
 namespace dsl
 {
     public class MasterFileParser : Parser
     {
-        public string StartingOrigin { get; set; }
         static int tokenSemicolon = 16;
         static int tokenControl = 17;
         static int tokenOpenParentheses = 18;
@@ -41,34 +42,24 @@ namespace dsl
         static readonly int[] tokensQueryClass = { tokenInternet, tokenCSNET, tokenChaos, tokenHesiod };
         static readonly int[] tokensQueryType = { tokenTransfer, tokenMailbox, tokenMailAgent, tokenHostAddress, tokenNameServer, tokenMailDestination, tokenMailForwarder, tokenCanonicalName, tokenAuthority, tokenWellKnownService, tokenPointer, tokenHostInfo, tokenMailboxInfo, tokenMailExchange, tokenText, tokenHostIPv6Address };
 
+        string origin = string.Empty;
+        int ttl = 3600;
+
+        public List<MasterFileEntry> Entries { get; set; }
+
         public MasterFileParser()
         {
-            StartingOrigin = string.Empty;
+            Entries = new List<MasterFileEntry>();
         }
         
+        // TODO: this will do no more than parse a file and return a list of strong typed RRs - someone else needs to think about optimal structure (see section 6 of RFC)
         public override void Parse(string filename)
         {
             FileStream fs = File.OpenRead(filename);
             StreamReader sr = new StreamReader(fs);
             scanner = new Scanner(sr);
 
-            string origin = StartingOrigin;
-            int ttl = 3600;
-
-            // I think I can treat this like any other DSL
-            // The following entries are defined according to RFC1035
-            //     <blank>[<comment>]
-            //     $ORIGIN <domain-name> [<comment>]
-            //     $INCLUDE <file-name> [<domain-name>] [<comment>]
-            //     $TTL <number> [<comment>] ** This is missing from the RFC, maybe came in a later update?
-            //     <domain-name><rr> [<comment>]
-            //     <blank><rr> [<comment>]
-            // <rr> contents take one of the following forms:
-            //     [<owner>] [<TTL>] [<class>] <type> <RDATA>
-            //     [<owner>] [<class>] [<TTL>] <type> <RDATA>
-
             // Getting the first token will skip whitespace, so I will have either a comment, a RR or a control block
-
             GetToken();
 
             do
@@ -82,7 +73,7 @@ namespace dsl
                     Console.WriteLine($"{token.Type} at {token.sr},{token.sc}");
                     if (token.Type == tokenOrigin)
                     {
-                        ParseOrigin();
+                        origin = ParseOrigin();
                     }
                     else if (token.Type == tokenTTL)
                     {
@@ -95,6 +86,18 @@ namespace dsl
                         }
 
                         GetToken();
+                    }
+                    else if (token.Type == tokenInclude)
+                    {
+                        GetToken();
+
+                        // TODO: finish this
+
+                        // will it be a filename, need to process dots and slashes??
+
+                        // there could be a domain name - how to know?
+
+                        // there could be a comment - how to know?
                     }
                 }
                 else
@@ -140,8 +143,6 @@ namespace dsl
             // skip the rest of the whitespace to have the next token ready
             GetToken();
 
-            Console.WriteLine($"Parsed domain name: {builder.ToString()}");
-
             return builder.ToString();
         }
 
@@ -149,11 +150,11 @@ namespace dsl
         {
             bool haveType = false;
 
-            int timeToLive = 0;
-            string owner = string.Empty;
-            string @class = string.Empty;
-            string type = string.Empty;
-            string data = string.Empty;
+            MasterFileEntry entry = new MasterFileEntry();
+
+            // TODO: decide what to do with the data i retrieve, should put in a MasterFileEntry object
+            // or do i keep a binary representation per chapter 3 of the RFC ready for inserting into 
+            // answers?
 
             while (haveType == false && token.Type != TokenType.EndOfFile)
             {
@@ -162,7 +163,7 @@ namespace dsl
                     // most likely a <rr> beginning with TTL
                     //     [<TTL>] [<class>] <type> <RDATA>
                     NumberToken nt = token as NumberToken;
-                    timeToLive = (int)nt.Value;
+                    entry.TTL = (int)nt.Value;
 
                     GetToken();
                 }
@@ -171,7 +172,7 @@ namespace dsl
                     // most likely a <rr> beginning with class
                     //     [<class>] [<TTL>] <type> <RDATA>
                     WordToken wt = token as WordToken;
-                    @class = wt.Word;
+                    entry.Class = wt.Word;
 
                     GetToken();
                 }
@@ -180,7 +181,7 @@ namespace dsl
                     haveType = true;
 
                     WordToken wt = token as WordToken;
-                    type = wt.Word;
+                    entry.Type = wt.Word;
 
                     // prepare to parse the data
                     if (token.Type == tokenCanonicalName)
@@ -188,7 +189,7 @@ namespace dsl
                         // name string - probably fqdn
                         GetToken();
 
-                        data = ParseDomainName();
+                        entry.Data = ParseDomainName();
                     }
                     else if (token.Type == tokenHostInfo)
                     {
@@ -205,54 +206,54 @@ namespace dsl
                         GetToken();
 
                         NumberToken nt = token as NumberToken;
-                        int priority = (int)nt.Value;
+                        entry.Priority = (int)nt.Value;
 
                         GetToken();
 
-                        data = ParseDomainName();
+                        entry.Data = ParseDomainName();
                     }
                     else if (token.Type == tokenNameServer)
                     {
                         GetToken();
-                        data = ParseDomainName();
+                        entry.Data = ParseDomainName();
                     }
                     else if (token.Type == tokenPointer)
                     {
                         GetToken();
-                        data = ParseDomainName();
+                        entry.Data = ParseDomainName();
                     }
                     else if (token.Type == tokenAuthority)
                     {
                         // name server
                         GetToken();
-                        ParseDomainName();
+                        entry.NameServer = ParseDomainName();
 
                         // mailbox of responsible person
-                        ParseDomainName();
+                        entry.Responsible = ParseDomainName();
 
                         // serial number
                         NumberToken nt = token as NumberToken;
-                        int serialNumber = (int)nt.Value;
+                        entry.SerialNumber = (int)nt.Value;
 
                         // refresh interval
                         GetToken();
                         nt = token as NumberToken;
-                        int refreshInterval = (int)nt.Value;
+                        entry.RefreshInterval = (int)nt.Value;
 
                         // retry interval
                         GetToken();
                         nt = token as NumberToken;
-                        int retryInterval = (int)nt.Value;
+                        entry.RetryInterval = (int)nt.Value;
 
                         // expiry timeout
                         GetToken();
                         nt = token as NumberToken;
-                        int expiryTimeout = (int)nt.Value;
+                        entry.ExpiryTimeout = (int)nt.Value;
 
                         // minimum ttl
                         GetToken();
                         nt = token as NumberToken;
-                        int minimumTtl = (int)nt.Value;
+                        entry.MinimumTTL = (int)nt.Value;
 
                         GetToken();
                     }
@@ -261,19 +262,19 @@ namespace dsl
                         GetToken();
                         
                         // TODO: this is wrong and probably needs additional parsing
-                        data = ((WordToken)token).Word;
+                        entry.Data = ((WordToken)token).Word;
 
                         GetToken();
                     }
                     else if (token.Type == tokenHostAddress)
                     {
                         GetToken();
-                        data = ParseIPv4Address();
+                        entry.Data = ParseIPv4Address();
                     }
                     else if (token.Type == tokenHostIPv6Address)
                     {
                         GetToken();
-                        data = ParseIPv6Address();
+                        entry.Data = ParseIPv6Address();
                     }
                     else if (token.Type == tokenWellKnownService)
                     {
@@ -289,11 +290,28 @@ namespace dsl
                 {
                     // most likely a <rr> beginning with <owner>
                     //     <domain-name> [<class>] [<TTL>] <type> <RDATA>
-                    owner = ParseDomainName();
+                    entry.Owner = ParseDomainName();
                 }
             }
 
-            Console.WriteLine($"Parsed resource record: {type}");
+            // TODO: if the owner is @ or a label convert to FQDN using current origin
+            if (entry.Owner == null)
+            {
+                entry.Owner = origin;
+            }
+            else if (entry.Owner == "@")
+            {
+                entry.Owner = origin;
+            }
+            else if (entry.Owner.EndsWith(".") == false)
+            {
+                entry.Owner += "." + origin;
+            }
+
+            // add to the running list of entries found
+            Entries.Add(entry);
+
+            Console.WriteLine($"Parsed resource record: {entry.Owner}\t{entry.Type}\t{entry.Class}\t{entry.Data}");
         }
 
         protected string ParseIPv4Address()
