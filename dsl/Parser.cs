@@ -51,9 +51,9 @@ namespace dsl
             throw new NotSupportedException("Declare a subclass");
         }
 
-        protected virtual void GetToken()
+        protected virtual void GetToken(bool skipWhitespace = true)
         {
-            token = scanner.GetToken();
+            token = scanner.GetToken(skipWhitespace);
         }
 
         protected SymbolTableNode SearchAll(string symbol)

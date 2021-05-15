@@ -9,5 +9,6 @@ namespace dsl
         public static readonly int String = 4;
         public static readonly int Special = 5;
         public static readonly int LineMarker = 6;
+        public static readonly int Whitespace = 7;
     }
 }

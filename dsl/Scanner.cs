@@ -75,11 +75,18 @@ namespace dsl
 
         // TODO: maintain a list of special token types
 
-        public Token GetToken()
+        public Token GetToken(bool skipWhitespace = true)
         {
-            SkipWhitespace();
+            if (skipWhitespace)
+            {
+                SkipWhitespace();
+            }
 
-            if (currType == CharType.Alpha)
+            if (currType == CharType.Whitespace)
+            {
+                return new Token() { Type = TokenType.Whitespace };
+            }
+            else if (currType == CharType.Alpha)
             {
                 WordToken token = WordToken.GetToken(this);
                 // TODO: check for reserved words
@@ -87,6 +94,10 @@ namespace dsl
             }
             else if (currType == CharType.Numeric)
             {
+                // TODO: need a scanner options class that lets me specify things like
+                // skipping whitespace, treating numbers etc.
+                // because here an IP address will be treated as a decimal number
+                // 192.0[.2.1]
                 return NumberToken.GetToken(this);
             }
             else if (currType == CharType.Quote)

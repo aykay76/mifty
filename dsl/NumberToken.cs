@@ -34,36 +34,37 @@ namespace dsl
             t.AccumulateValue(scanner, ref t._value);
             t.wholePlaces = t.digitCount;
 
-            if (scanner.curr == '.')
-            {
-                t.stringBuilder.Append(scanner.curr);
-                scanner.Next();
-                t.real = true;
-                t.AccumulateValue(scanner, ref t._value);
-                t.decimalPlaces = t.digitCount - t.wholePlaces;
-            }
+            // no dealing with real values, just integers
+            // if (scanner.curr == '.')
+            // {
+            //     t.stringBuilder.Append(scanner.curr);
+            //     scanner.Next();
+            //     t.real = true;
+            //     t.AccumulateValue(scanner, ref t._value);
+            //     t.decimalPlaces = t.digitCount - t.wholePlaces;
+            // }
 
-            if (scanner.curr == 'e' || scanner.curr == 'E')
-            {
-                t.real = true;
-                t.stringBuilder.Append(scanner.curr);
-                scanner.Next();
+            // if (scanner.curr == 'e' || scanner.curr == 'E')
+            // {
+            //     t.real = true;
+            //     t.stringBuilder.Append(scanner.curr);
+            //     scanner.Next();
 
-                if (scanner.curr == '+' || scanner.curr == '-')
-                {
-                    t.exponentSign = scanner.curr;
-                    t.stringBuilder.Append(scanner.curr);
-                    scanner.Next();
-                }
+            //     if (scanner.curr == '+' || scanner.curr == '-')
+            //     {
+            //         t.exponentSign = scanner.curr;
+            //         t.stringBuilder.Append(scanner.curr);
+            //         scanner.Next();
+            //     }
 
-                t.digitCount = 0;
-                t.AccumulateValue(scanner, ref t.eValue);
+            //     t.digitCount = 0;
+            //     t.AccumulateValue(scanner, ref t.eValue);
 
-                if (t.exponentSign == '-')
-                {
-                    t.eValue = -t.eValue;
-                }
-            }
+            //     if (t.exponentSign == '-')
+            //     {
+            //         t.eValue = -t.eValue;
+            //     }
+            // }
 
             t.ec = scanner.col;
             t.er = scanner.row;

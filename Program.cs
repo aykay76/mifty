@@ -12,7 +12,6 @@ namespace mifty
             dsl.MasterFileParser parser = new dsl.MasterFileParser();
             parser.Parse("example.zone");
 
-            MasterFile file = MasterFile.FromFile("example.zone");
             Console.WriteLine("read master file succcesfulllly");
 
             // Message message = Message.FromFile("badanswer.txt");

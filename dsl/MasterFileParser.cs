@@ -34,9 +34,12 @@ namespace dsl
         static int tokenMailboxInfo = 40;
         static int tokenMailExchange = 41;
         static int tokenText = 42;
+        static int tokenHostIPv6Address = 43;
+        static int tokenColon = 44;
+        static int tokenAt = 45;
 
         static readonly int[] tokensQueryClass = { tokenInternet, tokenCSNET, tokenChaos, tokenHesiod };
-        static readonly int[] tokensQueryType = { tokenTransfer, tokenMailbox, tokenMailAgent, tokenHostAddress, tokenNameServer, tokenMailDestination, tokenMailForwarder, tokenCanonicalName, tokenAuthority, tokenWellKnownService, tokenPointer, tokenHostInfo, tokenMailboxInfo, tokenMailExchange, tokenText };
+        static readonly int[] tokensQueryType = { tokenTransfer, tokenMailbox, tokenMailAgent, tokenHostAddress, tokenNameServer, tokenMailDestination, tokenMailForwarder, tokenCanonicalName, tokenAuthority, tokenWellKnownService, tokenPointer, tokenHostInfo, tokenMailboxInfo, tokenMailExchange, tokenText, tokenHostIPv6Address };
 
         public MasterFileParser()
         {
@@ -121,14 +124,21 @@ namespace dsl
                     WordToken wt = token as WordToken;
                     builder.Append(wt.Word);
                 }
+                else if (token.Type == tokenAt)
+                {
+                    builder.Append("@");
+                }
                 else if (token.Type == tokenDot)
                 {
                     builder.Append(".");
                 }
 
-                GetToken();
+                GetToken(false);
             }
-            while (token.Type != TokenType.EndOfFile && token.Type != TokenType.Numeric && token.Type != tokenControl && !token.IsInList(tokensQueryClass) && !token.IsInList(tokensQueryType));
+            while (token.Type != TokenType.Whitespace && token.Type != TokenType.EndOfFile && token.Type != TokenType.Numeric && token.Type != tokenControl && !token.IsInList(tokensQueryClass) && !token.IsInList(tokensQueryType));
+
+            // skip the rest of the whitespace to have the next token ready
+            GetToken();
 
             Console.WriteLine($"Parsed domain name: {builder.ToString()}");
 
@@ -173,10 +183,22 @@ namespace dsl
                     type = wt.Word;
 
                     // prepare to parse the data
-                    if (token.Type == tokenNameServer)
+                    if (token.Type == tokenCanonicalName)
                     {
+                        // name string - probably fqdn
                         GetToken();
+
                         data = ParseDomainName();
+                    }
+                    else if (token.Type == tokenHostInfo)
+                    {
+                        // CPU string
+                        GetToken();
+
+                        // OS string
+                        GetToken();
+
+                        GetToken();
                     }
                     else if (token.Type == tokenMailExchange)
                     {
@@ -189,31 +211,78 @@ namespace dsl
 
                         data = ParseDomainName();
                     }
-                    else if (token.Type == tokenHostAddress)
-                    {
-                        // first octet
-                        GetToken();
-
-                        for (int i = 0; i < 3; i++)
-                        {
-                            GetToken();
-
-                            GetToken();
-                        }
-                    }
-                    else if (token.Type == tokenCanonicalName)
+                    else if (token.Type == tokenNameServer)
                     {
                         GetToken();
-
                         data = ParseDomainName();
                     }
-                    else if (token.Type == tokenHostInfo)
+                    else if (token.Type == tokenPointer)
                     {
-                        // CPU
+                        GetToken();
+                        data = ParseDomainName();
+                    }
+                    else if (token.Type == tokenAuthority)
+                    {
+                        // name server
+                        GetToken();
+                        ParseDomainName();
+
+                        // mailbox of responsible person
+                        ParseDomainName();
+
+                        // serial number
+                        NumberToken nt = token as NumberToken;
+                        int serialNumber = (int)nt.Value;
+
+                        // refresh interval
+                        GetToken();
+                        nt = token as NumberToken;
+                        int refreshInterval = (int)nt.Value;
+
+                        // retry interval
+                        GetToken();
+                        nt = token as NumberToken;
+                        int retryInterval = (int)nt.Value;
+
+                        // expiry timeout
+                        GetToken();
+                        nt = token as NumberToken;
+                        int expiryTimeout = (int)nt.Value;
+
+                        // minimum ttl
+                        GetToken();
+                        nt = token as NumberToken;
+                        int minimumTtl = (int)nt.Value;
+
+                        GetToken();
+                    }
+                    else if (token.Type == tokenText)
+                    {
+                        GetToken();
+                        
+                        // TODO: this is wrong and probably needs additional parsing
+                        data = ((WordToken)token).Word;
+
+                        GetToken();
+                    }
+                    else if (token.Type == tokenHostAddress)
+                    {
+                        GetToken();
+                        data = ParseIPv4Address();
+                    }
+                    else if (token.Type == tokenHostIPv6Address)
+                    {
+                        GetToken();
+                        data = ParseIPv6Address();
+                    }
+                    else if (token.Type == tokenWellKnownService)
+                    {
+                        // address
                         GetToken();
 
-                        // OS
-                        GetToken();
+                        string address = ParseIPv4Address();
+
+                        string protocol = ((WordToken)token).Word;
                     }
                 }
                 else
@@ -221,16 +290,69 @@ namespace dsl
                     // most likely a <rr> beginning with <owner>
                     //     <domain-name> [<class>] [<TTL>] <type> <RDATA>
                     owner = ParseDomainName();
-                    GetToken();
                 }
             }
 
             Console.WriteLine($"Parsed resource record: {type}");
         }
 
-        protected override void GetToken()
+        protected string ParseIPv4Address()
         {
-            base.GetToken();
+            StringBuilder builder = new StringBuilder();
+
+            // first octet
+            int octet = (int)((NumberToken)token).Value;
+            builder.Append(octet);
+
+            for (int i = 0; i < 3; i++)
+            {
+                // get dot
+                GetToken();
+                builder.Append(".");
+
+                // next octet as a number
+                GetToken();
+                octet = (int)((NumberToken)token).Value;
+                builder.Append(octet);
+            }
+
+            GetToken();
+
+            return builder.ToString();
+        }
+
+        protected string ParseIPv6Address()
+        {
+            StringBuilder builder = new StringBuilder();
+
+            while (token.Type == TokenType.Numeric || token.Type == tokenColon || token.Type == TokenType.Identifier)
+            {
+                // alpha segments will be tagged as identifiers
+                if (token.Type == TokenType.Identifier)
+                {
+                    builder.Append(((WordToken)token).Word);
+                }
+                else if (token.Type == TokenType.Numeric)
+                {
+                    builder.Append((int)((NumberToken)token).Value);
+                }
+                else
+                {
+                    builder.Append(":");
+                }
+
+                // get next number, colon or bust
+                GetToken(false);
+            }
+
+            GetToken();
+
+            return builder.ToString();
+        }
+
+        protected override void GetToken(bool skipWhitespace = true)
+        {
+            base.GetToken(skipWhitespace);
 
             if (token.Type == TokenType.Special)
             {
@@ -245,7 +367,7 @@ namespace dsl
                     }
                     while (scanner.curr != '\n');
                     scanner.Next();
-                    GetToken();
+                    GetToken(skipWhitespace);
                 }
                 else if (st.Token == '$')
                 {
@@ -253,15 +375,26 @@ namespace dsl
                 }
                 else if (st.Token == '(')
                 {
-                    token.Type = tokenOpenParentheses;
+                    //token.Type = tokenOpenParentheses;
+                    // i think just ignore parentheses
+                    GetToken(skipWhitespace);
                 }
                 else if (st.Token == ')')
                 {
-                    token.Type = tokenCloseParentheses;
+                    // token.Type = tokenCloseParentheses;
+                    GetToken(skipWhitespace);
                 }
                 else if (st.Token == '.')
                 {
                     token.Type = tokenDot;
+                }
+                else if (st.Token == ':')
+                {
+                    token.Type = tokenColon;
+                }
+                else if (st.Token == '@')
+                {
+                    token.Type = tokenAt;
                 }
             }
             else if (token.Type == TokenType.Identifier)
@@ -310,6 +443,10 @@ namespace dsl
                 else if (wt.Word == "A")
                 {
                     token.Type = tokenHostAddress;
+                }
+                else if (wt.Word == "AAAA")
+                {
+                    token.Type = tokenHostIPv6Address;
                 }
                 else if (wt.Word == "NS")
                 {
