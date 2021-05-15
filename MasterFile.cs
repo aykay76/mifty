@@ -15,6 +15,30 @@ namespace mifty
             Entries = new List<MasterFileEntry>();
         }
 
+        protected static bool IsBlankLine(string line)
+        {
+            bool blank = false;
+
+            for (int i = 0; i < line.Length; i++)
+            {
+                if (line[i] == ' ' || line[i] == '\t')
+                {
+                    blank = true;
+                }
+                else if (line[i] == ';')
+                {
+                    break;
+                }
+                else
+                {
+                    blank = false;
+                    break;
+                }
+            }
+
+            return blank;
+        }
+
         public static MasterFile FromFile(string filename)
         {
             MasterFile masterFile = new MasterFile();
@@ -26,11 +50,27 @@ namespace mifty
             string[] parts = null;
 
             // TODO: refactor this - i'm sure it can be a lot neater using tokenisation!
+            // The following entries are defined:
+            //     <blank>[<comment>]
+            //     $ORIGIN <domain-name> [<comment>]
+            //     $INCLUDE <file-name> [<domain-name>] [<comment>]
+            //     <domain-name><rr> [<comment>]
+            //     <blank><rr> [<comment>]
+            // <rr> contents take one of the following forms:
+            //     [<TTL>] [<class>] <type> <RDATA>
+            //     [<class>] [<TTL>] <type> <RDATA>
 
             // predominantly line based so should be one entry per line but beware the parentheses!
             for (int i = 0; i < lines.Length; i++)
             {
                 string line = lines[i];
+
+                if (!IsBlankLine(line))
+                {
+                    // only process lines with something in them
+
+                }
+
                 int semi = line.IndexOf(';');
                 if (semi != -1)
                 {
