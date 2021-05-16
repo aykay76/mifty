@@ -14,3 +14,5 @@ The basics are there - I essentially have a UDP tunnel at the moment that has a 
 I'm going to continue with RFC 1035 and the full implementation of a DNS server. It doesn't have to be DNS of course, it's basically just a distributed key/value pair database server :)
 
 Until I decide exactly what to do I'm going to carry on with the import of zone files for DNS - I can then tailor it to my own needs as inspiration hits.
+
+I have decided to use my parser/scanner from the `simple-dsl` project here to parse the zone files. It may seem like overkill but the format is a little floppy so I wanted to ensure I have a robust way of loading files. Plus, it's a real use case for my DSL project and i've already come up with a few ideas on how to enhance that from using it here. So that's nice. I am using a cut down version of it though because I don't need symbol tables and icode because this isn't a script that will be executed. Of course I might end up adding it back in when I decide to add some sort of scripting capability to this project.
