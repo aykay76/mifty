@@ -53,7 +53,6 @@ namespace dsl
             Entries = new List<MasterFileEntry>();
         }
         
-        // TODO: this will do no more than parse a file and return a list of strong typed RRs - someone else needs to think about optimal structure (see section 6 of RFC)
         public override void Parse(string filename)
         {
             FileStream fs = File.OpenRead(filename);
@@ -111,7 +110,6 @@ namespace dsl
 
         protected string ParseOrigin()
         {
-            // $ORIGIN is followed by a domain name and an optional comment (which will be swallowed by tokeniser)
             GetToken();
 
             return ParseDomainName();
@@ -122,7 +120,6 @@ namespace dsl
             StringBuilder builder = new StringBuilder();
             do
             {
-                // TODO: handle numerics slightly differently in case it's part of a domain name or IP address
                 if (token.Type == TokenType.Identifier)
                 {
                     WordToken wt = token as WordToken;
@@ -152,10 +149,6 @@ namespace dsl
             bool haveType = false;
 
             MasterFileEntry entry = new MasterFileEntry();
-
-            // TODO: decide what to do with the data i retrieve, should put in a MasterFileEntry object
-            // or do i keep a binary representation per chapter 3 of the RFC ready for inserting into 
-            // answers?
 
             while (haveType == false && token.Type != TokenType.EndOfFile)
             {
@@ -227,6 +220,7 @@ namespace dsl
                     {
                         // name server
                         GetToken();
+                        // TODO: if token is open parentheses then loop until close parentheses (and stop scanner from swallowing parentheses)
                         entry.NameServer = ParseDomainName();
 
                         // mailbox of responsible person
@@ -285,6 +279,8 @@ namespace dsl
                         string address = ParseIPv4Address();
 
                         string protocol = ((WordToken)token).Word;
+
+                        // TODO: open parentheses, loop until close
                     }
                 }
                 else
@@ -301,10 +297,8 @@ namespace dsl
                 }
             }
 
-            // TODO: if the owner is @ or a label convert to FQDN using current origin
             if (entry.Owner == null)
             {
-                // set last owner, could still be relative
                 entry.Owner = owner;
             }
 

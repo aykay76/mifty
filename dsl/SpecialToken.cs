@@ -17,8 +17,6 @@ namespace dsl
             t.sc = scanner.col;
             t.sr = scanner.row;
 
-            // TODO: decide what special tokens will look like - this will be language specific so should be higher level IMO then the tokeniser can be unbiased
-
             t.Token = scanner.curr;
             scanner.Next();
             t.ec = scanner.col;
