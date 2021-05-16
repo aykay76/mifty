@@ -10,8 +10,8 @@ namespace dsl
     {
         static int tokenSemicolon = 16;
         static int tokenControl = 17;
-        static int tokenOpenParentheses = 18;
-        static int tokenCloseParentheses = 19;
+        // static int tokenOpenParentheses = 18;
+        // static int tokenCloseParentheses = 19;
         static int tokenOrigin = 20;
         static int tokenInclude = 21;
         static int tokenTTL = 22;

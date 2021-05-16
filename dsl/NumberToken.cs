@@ -12,9 +12,9 @@ namespace dsl
         bool real;
         int digitCount;
         int wholePlaces;
-        int decimalPlaces;
-        char exponentSign = '+';
-        double eValue;
+        // int decimalPlaces;
+        // char exponentSign = '+';
+        // double eValue;
         StringBuilder stringBuilder;
 
         public NumberToken()
@@ -69,11 +69,11 @@ namespace dsl
             t.ec = scanner.col;
             t.er = scanner.row;
 
-            var exponent = t.eValue - t.decimalPlaces;
-            if (exponent != 0)
-            {
-                t.Value *= Math.Pow(10, exponent);
-            }
+            // var exponent = t.eValue - t.decimalPlaces;
+            // if (exponent != 0)
+            // {
+            //     t.Value *= Math.Pow(10, exponent);
+            // }
 
             t.String = t.stringBuilder.ToString();
 

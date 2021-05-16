@@ -8,12 +8,12 @@ namespace dsl
         protected Scanner scanner;
         protected Token token;
         protected Stack<double> runtimeStack;
-        protected SymbolTable globalTable;
+        // protected SymbolTable globalTable;
 
         public Parser()
         {
             runtimeStack = new Stack<double>();
-            globalTable = new SymbolTable();
+            // globalTable = new SymbolTable();
         }
 
         public virtual void Parse(string filename)
@@ -56,14 +56,14 @@ namespace dsl
             token = scanner.GetToken(skipWhitespace);
         }
 
-        protected SymbolTableNode SearchAll(string symbol)
-        {
-            return globalTable.Search(symbol);
-        }
+        // protected SymbolTableNode SearchAll(string symbol)
+        // {
+        //     return globalTable.Search(symbol);
+        // }
 
-        protected SymbolTableNode EnterLocal(string symbol)
-        {
-            return globalTable.Enter(symbol);
-        }
+        // protected SymbolTableNode EnterLocal(string symbol)
+        // {
+        //     return globalTable.Enter(symbol);
+        // }
     }
 }
