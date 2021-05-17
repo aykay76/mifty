@@ -15,7 +15,42 @@ namespace mifty
             dsl.MasterFileParser parser = new dsl.MasterFileParser();
             parser.Parse("example.zone");
 
-            Console.WriteLine("read master file succcesfulllly");
+            // add entries to a catalogue as described in section 6 of RFC 1035 - if this gets very big a list might not cut it and
+            // I might change to a hashtable (Dictionary) with the entry name being key
+            Catalogue catalogue = new Catalogue();
+            foreach (MasterFileEntry entry in parser.Entries)
+            {
+                string[] parts = entry.Owner.Split('.', StringSplitOptions.RemoveEmptyEntries);
+                Array.Reverse(parts);
+
+                // start pointing at root, look for a match
+                Catalogue pointer = catalogue;
+                foreach (string s in parts)
+                {
+                    if (pointer.Children == null)
+                    {
+                        pointer.Children = new List<Catalogue>();
+                    }
+
+                    Catalogue child = pointer.FindChild(s);
+                    if (child == null)
+                    {
+                        child = new Catalogue() { Label = s };
+                        pointer.Children.Add(child);
+                    }
+
+                    pointer = child;
+                }
+
+                if (pointer.Entries == null)
+                {
+                    pointer.Entries = new List<MasterFileEntry>();
+                }
+
+                pointer.Entries.Add(entry);
+            }
+
+            Console.WriteLine("read master file successfully");
 
             // Message message = Message.FromFile("badanswer.txt");
 
