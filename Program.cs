@@ -15,40 +15,7 @@ namespace mifty
             dsl.MasterFileParser parser = new dsl.MasterFileParser();
             parser.Parse("example.zone");
 
-            // add entries to a catalogue as described in section 6 of RFC 1035 - if this gets very big a list might not cut it and
-            // I might change to a hashtable (Dictionary) with the entry name being key
-            Catalogue catalogue = new Catalogue();
-            foreach (MasterFileEntry entry in parser.Entries)
-            {
-                string[] parts = entry.Owner.Split('.', StringSplitOptions.RemoveEmptyEntries);
-                Array.Reverse(parts);
-
-                // start pointing at root, look for a match
-                Catalogue pointer = catalogue;
-                foreach (string s in parts)
-                {
-                    if (pointer.Children == null)
-                    {
-                        pointer.Children = new List<Catalogue>();
-                    }
-
-                    Catalogue child = pointer.FindChild(s);
-                    if (child == null)
-                    {
-                        child = new Catalogue() { Label = s };
-                        pointer.Children.Add(child);
-                    }
-
-                    pointer = child;
-                }
-
-                if (pointer.Entries == null)
-                {
-                    pointer.Entries = new List<MasterFileEntry>();
-                }
-
-                pointer.Entries.Add(entry);
-            }
+            Catalogue catalogue = Catalogue.FromEntryList(parser.Entries);
 
             Console.WriteLine("read master file successfully");
 
@@ -101,7 +68,7 @@ namespace mifty
             // TODO: configure secondary forwarder for greater resilience, and secondary server address if this is a multi-homed server
 Console.WriteLine();
             Server server = new Server();
-            server.WithConfig(ServerConfig.FromFile(Environment.CurrentDirectory + "\\windows.json")).WithNaughtyList(naughtyList).Start();
+            server.WithConfig(ServerConfig.FromFile(Environment.CurrentDirectory + "\\windows.json")).WithCatalogue(catalogue).WithNaughtyList(naughtyList).Start();
 
             // TODO: make this a command line arg with default
             FileSystemWatcher watcher = new FileSystemWatcher(Environment.CurrentDirectory, "*.json");

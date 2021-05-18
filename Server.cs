@@ -10,6 +10,7 @@ namespace mifty
         ServerConfig config = null;
         State state = new State();
         NaughtyList naughtyList;
+        Catalogue catalogue;
 
         public static void ReceiveCallback(IAsyncResult asyncResult)
         {
@@ -180,6 +181,12 @@ namespace mifty
         public Server WithNaughtyList(NaughtyList naughtyList)
         {
             this.naughtyList = naughtyList;
+            return this;
+        }
+
+        public Server WithCatalogue(Catalogue catalogue)
+        {
+            this.catalogue = catalogue;
             return this;
         }
 
