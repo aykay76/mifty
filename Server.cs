@@ -214,7 +214,6 @@ namespace mifty
             //    for the socket with this ioctl call. IOControl is analogous to the WSAIoctl method of Winsock 2
             // Credit: https://www.winsocketdotnetworkprogramming.com/clientserversocketnetworkcommunication8.html
             byte[] inValue = new byte[] { 0, 0, 0, 0 }; // == false
-            byte[] outValue = new byte[] { 0, 0, 0, 0 }; // initialize to 0
             udp.IOControl(-1744830452, inValue, null);
 
             state.Server = this;
