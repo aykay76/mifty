@@ -24,5 +24,8 @@ namespace mifty
         public string Address { get; set; }
         public string Protocol { get; set; }
         // TODO: add bitfield for port numbers
+
+
+        // TODO: add byte representation for questions and answers on the wire, for efficiency
     }
 }

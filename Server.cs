@@ -111,7 +111,7 @@ namespace mifty
 
             int retryCount = 5;
             int retryTime = 1000;
-            while (retryCount > 0)
+            while (retryCount >= 0)
             {
                 try
                 {
@@ -153,7 +153,6 @@ namespace mifty
             {
                 for (int i = 0; i < messageLength; i++)
                 {
-                    // TODO: link the response with the original request through state somehow
                     Console.Write($"{bytes[i]:X2} ");
                     if (i % 16 == 15) Console.WriteLine();
                 }
