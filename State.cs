@@ -7,7 +7,7 @@ namespace mifty
     public class State
     {
         // TODO: rename some of these variables
-        public Socket Udp { get; set; }
+        public Socket UdpV6 { get; set; }
         public Socket UdpOut { get; set; }
         public byte[] Buffer { get; set; }
         public int Position { get; set; }
@@ -17,6 +17,8 @@ namespace mifty
 
         // TODO: I might replace this with a more rich object than just endpoint if I need to store more information
         //       for example, add timestamp so that I can measure latency
+        //       requests per client
+        //       throttling
         public Dictionary<ushort, Client> Clients { get; set; }
 
         public State()

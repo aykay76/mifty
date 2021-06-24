@@ -6,10 +6,10 @@ namespace mifty
 {
     public class ServerConfig
     {
-        public string ListenAddress { get; set; }
-        public string ResolverAddress { get; set; }
+        public string ListenAddressV6 { get; set; }
+        public string ResolverAddressV6 { get; set; }
         public int ListenPort { get; set; }
-        public List<string> Forwarders { get; set; }
+        public List<string> ForwardersV6 { get; set; }
         public int LogLevel { get; set; }
 
         public static ServerConfig FromFile(string filename)

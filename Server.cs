@@ -19,7 +19,7 @@ namespace mifty
             EndPoint remoteEndpoint = new IPEndPoint(IPAddress.IPv6Any, 0);
             try
             {
-                int messageLength = state.Udp.EndReceiveFrom(asyncResult, ref remoteEndpoint);
+                int messageLength = state.UdpV6.EndReceiveFrom(asyncResult, ref remoteEndpoint);
 
                 // take a copy of the buffer and start receiving again ASAP to service another customer
                 byte[] bytes = new byte[messageLength];
@@ -69,12 +69,13 @@ namespace mifty
                     client.RemoteEndpoint = remoteIpEndpoint;
                     state.Clients[message.ID] = client;
 
+                    // TODO: make IPv4/IPv6 configurable or automatic based on config options
                     client.UdpOut = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
-                    client.UdpOut.Bind(new IPEndPoint(IPAddress.Parse(state.Server.config.ResolverAddress), 0));
+                    client.UdpOut.Bind(new IPEndPoint(IPAddress.Parse(state.Server.config.ResolverAddressV6), 0));
 
                     // for now for now i'm just going to forward to a known DNS server, see what happens
                     // TODO: if there are multiple do we send to all or just one at a time?
-                    foreach (string forwarder in state.Server.config.Forwarders)
+                    foreach (string forwarder in state.Server.config.ForwardersV6)
                     {
                         int sent = client.UdpOut.SendTo(bytes, 0, messageLength, SocketFlags.None, new IPEndPoint(IPAddress.Parse(forwarder), 53));
                         client.UdpOut.BeginReceiveFrom(client.ResponseBuffer, client.ResponsePosition, client.ResponseBuffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveResponseCallback), client);
@@ -115,7 +116,7 @@ namespace mifty
             {
                 try
                 {
-                    state.Udp.BeginReceiveFrom(state.Buffer, state.Position, state.Buffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveCallback), state);
+                    state.UdpV6.BeginReceiveFrom(state.Buffer, state.Position, state.Buffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveCallback), state);
 
                     // no need to retry if above doesn't fail
                     retryCount = 0;
@@ -168,7 +169,7 @@ namespace mifty
             }
 
             // find the right client
-            int sent = client.Server.state.Udp.SendTo(bytes, 0, messageLength, SocketFlags.None, client.RemoteEndpoint);
+            int sent = client.Server.state.UdpV6.SendTo(bytes, 0, messageLength, SocketFlags.None, client.RemoteEndpoint);
         }
 
         public Server WithConfig(ServerConfig serverConfig)
@@ -199,41 +200,45 @@ namespace mifty
         {
             // TODO: add TCP support? maybe for future if doing zone transfers, otherwise it probably isn't needed
 
-            // create a socket that will accept requests from the "client network"
-            Socket udp = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
-            udp.Bind(new IPEndPoint(IPAddress.Parse(config.ListenAddress), config.ListenPort));
-
-            // Set the SIO_UDP_CONNRESET ioctl to true for this UDP socket. If this UDP socket
-            //    ever sends a UDP packet to a remote destination that exists but there is
-            //    no socket to receive the packet, an ICMP port unreachable message is returned
-            //    to the sender. By default, when this is received the next operation on the
-            //    UDP socket that send the packet will receive a SocketException. The native
-            //    (Winsock) error that is received is WSAECONNRESET (10054). Since we don't want
-            //    to wrap each UDP socket operation in a try/except, we'll disable this error
-            //    for the socket with this ioctl call. IOControl is analogous to the WSAIoctl method of Winsock 2
-            // Credit: https://www.winsocketdotnetworkprogramming.com/clientserversocketnetworkcommunication8.html
-            byte[] inValue = new byte[] { 0, 0, 0, 0 }; // == false
-            udp.IOControl(-1744830452, inValue, null);
-
-            state.Server = this;
-            state.Udp = udp;
-
             // TODO: need to decide whether to include this as an option.
             //       On the one hand opening a new socket for every request could lead to port exhaustion on a busy network
             //       On the other hand, using one connection the requests need to be synchronised to avoid buffer overlaps
             //       On the third hand I wish I had, I could have a pool of connections (configurable) which could be utilised based on some busy state flag being clear?
-            // create a socket that will be used to forward requests on
-            // state.UdpOut = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            // state.UdpOut.Bind(new IPEndPoint(IPAddress.Parse(config.ResolverAddress), 0));
+            // create a socket that will accept requests from the "client network"
 
-            // and begin...
-            EndPoint dummyEndpoint = new IPEndPoint(IPAddress.IPv6Any, 0);
-            udp.BeginReceiveFrom(state.Buffer, state.Position, state.Buffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveCallback), state);
+            state.Server = this;
+
+            // TODO: make v4/v6 automatic based on configuration
+            if (!string.IsNullOrEmpty(config.ListenAddressV6))
+            {
+                Socket udp = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
+                udp.Bind(new IPEndPoint(IPAddress.Parse(config.ListenAddressV6), config.ListenPort));
+                state.UdpV6 = udp;
+
+                // Set the SIO_UDP_CONNRESET ioctl to true for this UDP socket. If this UDP socket
+                //    ever sends a UDP packet to a remote destination that exists but there is
+                //    no socket to receive the packet, an ICMP port unreachable message is returned
+                //    to the sender. By default, when this is received the next operation on the
+                //    UDP socket that send the packet will receive a SocketException. The native
+                //    (Winsock) error that is received is WSAECONNRESET (10054). Since we don't want
+                //    to wrap each UDP socket operation in a try/except, we'll disable this error
+                //    for the socket with this ioctl call. IOControl is analogous to the WSAIoctl method of Winsock 2
+                // Credit: https://www.winsocketdotnetworkprogramming.com/clientserversocketnetworkcommunication8.html
+                byte[] inValue = new byte[] { 0, 0, 0, 0 }; // == false
+                udp.IOControl(-1744830452, inValue, null);
+
+                // and begin...
+                EndPoint dummyEndpoint = new IPEndPoint(IPAddress.IPv6Any, 0);
+                udp.BeginReceiveFrom(state.Buffer, state.Position, state.Buffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveCallback), state);
+            }
         }
 
         public void Stop()
         {
-            state.Udp.Close();
+            if (state.UdpV6 != null)
+            {
+                state.UdpV6.Close();
+            }
             // state.UdpOut.Close();
 
             foreach (Client client in state.Clients.Values)
