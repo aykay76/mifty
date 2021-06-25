@@ -9,10 +9,6 @@ namespace mifty
     {
         static void Main(string[] args)
         {
-            // ok, in the spirit of this project I grant that this parsing approach is not the fastest but it's one time to load the file(s)
-            // and it provides robustness to the process - I will optimise the in-memory representation of the master zone records so that
-            // this can be as fast as possible (maybe not quite faster than light but hopefully fast enough)
-
             // TODO: make this configurable to look in a specific directory, and have an option to load async or not
             dsl.MasterFileParser parser = new dsl.MasterFileParser();
             parser.Parse("example.zone");
@@ -20,8 +16,6 @@ namespace mifty
             Catalogue catalogue = Catalogue.FromEntryList(parser.Entries);
 
             Console.WriteLine("Read master file(s) successfully");
-
-            // Message message = Message.FromFile("badanswer.txt");
 
             var exitEvent = new ManualResetEvent(false);
 
