@@ -46,6 +46,7 @@ namespace mifty
             Console.WriteLine("Ready to serve...");
             exitEvent.WaitOne();
 
+            Console.WriteLine("Shutting down...");
             server.Stop();
         }
     }
