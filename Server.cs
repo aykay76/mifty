@@ -25,6 +25,9 @@ namespace mifty
         public byte[] ResponseBufferV4 { get; set; }
         public int ResponsePositionV4 { get; set; }
 
+        IAsyncResult ar6;
+        IAsyncResult ar4;
+
         // TODO: I might replace this with a more rich object than just endpoint if I need to store more information
         //       for example, add timestamp so that I can measure latency
         //       requests per client
@@ -49,13 +52,19 @@ namespace mifty
         public static void ReceiveCallbackV6(IAsyncResult asyncResult)
         {
             Server server = (Server)asyncResult.AsyncState;
-            server.CommonCallback(asyncResult, 6);
+            if (asyncResult == server.ar6)
+            {
+                server.CommonCallback(asyncResult, 6);
+            }
         }
 
         public static void ReceiveCallbackV4(IAsyncResult asyncResult)
         {
             Server server = (Server)asyncResult.AsyncState;
-            server.CommonCallback(asyncResult, 4);
+            if (asyncResult == server.ar4)
+            {
+                server.CommonCallback(asyncResult, 4);
+            }
         }
 
         public void CommonCallback(IAsyncResult asyncResult, int ipVersion)
@@ -118,7 +127,7 @@ namespace mifty
                     Console.WriteLine("[TRACE] Checking naughty list, just once");
                 }
 
-                if (naughtyList != null && naughtyList.Contains(message.Queries[0].Name))
+                if (naughtyList != null && naughtyList.Match(message.Queries[0].Name))
                 {
                     if (config.LogLevel >= LogLevel.Info)
                     {
@@ -174,11 +183,12 @@ namespace mifty
                     }
                 }
             }
-            catch (ArgumentException)
+            catch (ArgumentException ex)
             {
                 if (config.LogLevel >= LogLevel.Debug)
                 {
                     Console.WriteLine("[DEBUG] Threading issue, server restarted due to configuration change?");
+                    Console.WriteLine(ex.ToString());
                 }
             }
             catch (ObjectDisposedException)
@@ -210,11 +220,11 @@ namespace mifty
                 {
                     if (ipVersion == 6)
                     {
-                        UdpV6.BeginReceiveFrom(BufferV6, PositionV6, BufferV6.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveCallbackV6), this);
+                        ar6 = UdpV6.BeginReceiveFrom(BufferV6, PositionV6, BufferV6.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveCallbackV6), this);
                     }
                     else
                     {
-                        UdpV4.BeginReceiveFrom(BufferV4, PositionV4, BufferV4.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveCallbackV4), this);
+                        ar4 = UdpV4.BeginReceiveFrom(BufferV4, PositionV4, BufferV4.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveCallbackV4), this);
                     }
 
                     // no need to retry if above doesn't fail

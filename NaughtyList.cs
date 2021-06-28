@@ -6,7 +6,7 @@ namespace mifty
 {
     public class NaughtyList
     {
-        private string[] hosts;
+        // private string[] hosts;
         private Dictionary<char, Dictionary<char, int>> indices;
 
         public string Label { get; set; }
@@ -92,29 +92,30 @@ namespace mifty
 
         // TODO: rework this to cater for the fact that we might not be searching against a specific host name, if we have an entire domain on the naughty list
         // we should match anything within that domain
-        public bool Contains(string host)
-        {
-            char c1 = host[0];
-            char c2 = host[1];
+        // I have replaced this with the more sophisticated Match method
+        // public bool Contains(string host)
+        // {
+        //     char c1 = host[0];
+        //     char c2 = host[1];
 
-            if (indices.ContainsKey(c1))
-            {
-                if (indices[c1].ContainsKey(c2))
-                {
-                    int c = 0;
-                    int i = indices[c1][c2];
-                    do
-                    {
-                        c = string.Compare(host, hosts[i]);
-                        if (c == 0) return true;
-                        i++;
-                    }
-                    while (c > 0 && i < hosts.Length);
-                }
-            }
+        //     if (indices.ContainsKey(c1))
+        //     {
+        //         if (indices[c1].ContainsKey(c2))
+        //         {
+        //             int c = 0;
+        //             int i = indices[c1][c2];
+        //             do
+        //             {
+        //                 c = string.Compare(host, hosts[i]);
+        //                 if (c == 0) return true;
+        //                 i++;
+        //             }
+        //             while (c > 0 && i < hosts.Length);
+        //         }
+        //     }
 
-            return false;
-        }
+        //     return false;
+        // }
 
         // build a tree structure similar to catalogue for the naughtylist (one could be a subset of the other actually)
         // this is INCREDIBLY slow though... maybe need a conversion process that runs periodically and creates a nicer format for loading quickly.

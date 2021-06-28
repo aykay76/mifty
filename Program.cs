@@ -9,6 +9,7 @@ namespace mifty
     {
         static void Main(string[] args)
         {
+            Console.WriteLine("Getting ready...");
             // TODO: make this configurable to look in a specific directory, and have an option to load async or not
             dsl.MasterFileParser parser = new dsl.MasterFileParser();
             parser.Parse("example.zone");
@@ -24,7 +25,8 @@ namespace mifty
                                   exitEvent.Set();
                               };
 
-            NaughtyList naughtyList = NaughtyList.FromFile("dnscrypt-proxy.blacklist.txt");
+            NaughtyList naughtyList = null;
+            // naughtyList = NaughtyList.FromFile("dnscrypt-proxy.blacklist.txt");
 
             // Create the server with config loaded from file
             // TODO: allow config file to be passed on command line
@@ -37,7 +39,7 @@ namespace mifty
             watcher.Changed += (o,e) => {
                 // wait a bit in case of race condition, it doesn't matter if it takes half a second to reload configuration
                 Thread.Sleep(500);
-                Console.WriteLine("Configuration changed, restarting server");
+                Console.WriteLine($"Processing change to {e.FullPath}...");
                 ServerConfig config = ServerConfig.FromFile(Environment.CurrentDirectory + "\\windows.json");
                 server.WithConfig(config).Restart();
             };

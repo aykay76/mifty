@@ -314,7 +314,7 @@ namespace dsl
             // add to the running list of entries found
             Entries.Add(entry);
 
-            Console.WriteLine($"Parsed resource record: {entry.Owner}\t{entry.Type}\t{entry.Class}\t{entry.Data}");
+            // Console.WriteLine($"Parsed resource record: {entry.Owner}\t{entry.Type}\t{entry.Class}\t{entry.Data}");
         }
 
         protected string ParseIPv4Address()
