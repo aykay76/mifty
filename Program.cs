@@ -1,12 +1,44 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using System.Threading;
 
 namespace mifty
 {
     class Program
     {
+        static void ConvertNaughtyList()
+        {
+            string[] entries = File.ReadAllLines("dnscrypt-proxy.blacklist.txt");
+            string[] reversed = new string[entries.Length];
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < entries.Length; i++)
+            {
+                string[] parts = entries[i].Split('.', StringSplitOptions.RemoveEmptyEntries);
+                Array.Reverse(parts);
+
+                bool first = true;
+                foreach (string part in parts)
+                {
+                    if (first)
+                    {
+                        first = false;
+                    }
+                    else
+                    {
+                        sb.Append(".");
+                    }
+                    sb.Append(part);
+                }
+
+                reversed[i] = sb.ToString();
+                sb.Clear();
+            }
+
+            File.WriteAllLines("naughtylist.txt", reversed);
+        }
+
         static void Main(string[] args)
         {
             Console.WriteLine("Getting ready...");
@@ -26,7 +58,7 @@ namespace mifty
                               };
 
             NaughtyList naughtyList = null;
-            // naughtyList = NaughtyList.FromFile("dnscrypt-proxy.blacklist.txt");
+            naughtyList = NaughtyList.FromFile("sorted-naughtylist.txt");
 
             // Create the server with config loaded from file
             // TODO: allow config file to be passed on command line

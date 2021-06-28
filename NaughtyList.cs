@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 
 namespace mifty
@@ -10,7 +11,7 @@ namespace mifty
         private Dictionary<char, Dictionary<char, int>> indices;
 
         public string Label { get; set; }
-        public List<NaughtyList> Children { get; set; }
+        public Dictionary<char, List<NaughtyList>> Children { get; set; }
 
         public NaughtyList()
         {
@@ -19,11 +20,18 @@ namespace mifty
 
         public NaughtyList AddChild(string label)
         {
-            if (Children == null) Children = new List<NaughtyList>();
+            if (Children == null) Children = new Dictionary<char, List<NaughtyList>>();
 
             NaughtyList child = new NaughtyList();
             child.Label = label;
-            Children.Add(child);
+            if (Children.ContainsKey(label[0]))
+            {
+                Children[label[0]].Add(child);
+            }
+            else
+            {
+                Children.Add(label[0], new List<NaughtyList> { child } );
+            }
 
             return child;
         }
@@ -32,7 +40,9 @@ namespace mifty
         {
             if (Children == null) return null;
 
-            foreach (NaughtyList child in Children)
+            if (Children.ContainsKey(label[0]) == false) return null;
+
+            foreach (NaughtyList child in Children[label[0]])
             {
                 if (string.Compare(label, child.Label, true) == 0)
                 {
@@ -54,7 +64,7 @@ namespace mifty
             {
                 bool match = false;
 
-                foreach (NaughtyList child in pointer.Children)
+                foreach (NaughtyList child in pointer.Children[parts[i][0]])
                 {
                     if (string.Compare(parts[i], child.Label, true) == 0)
                     {
@@ -121,17 +131,46 @@ namespace mifty
         // this is INCREDIBLY slow though... maybe need a conversion process that runs periodically and creates a nicer format for loading quickly.
         public static NaughtyList FromFile(string path)
         {
+            Stopwatch sw = new Stopwatch();
+            Console.Write("Reading naughty list...");
             NaughtyList naughtyList = new NaughtyList();
             string[] entries = File.ReadAllLines(path);
+            sw.Start();
+            string tld = string.Empty;
+            NaughtyList tldPtr = null;
             for (int i = 0; i < entries.Length; i++)
             {
                 string[] parts = entries[i].Split('.', StringSplitOptions.RemoveEmptyEntries);
-                Array.Reverse(parts);
+                // Array.Reverse(parts);
 
                 NaughtyList pointer = naughtyList;
+                bool first = true;
                 foreach (string part in parts)
                 {
-                    NaughtyList child = pointer.ChildMatch(part);
+                    NaughtyList child = null;
+
+                    // I'm going to "cache" the TLD because .com is so big
+                    if (first)
+                    {
+                        // first time we need to find the TLD pointer
+                        child = pointer.ChildMatch(part);
+                        tld = part;
+                        tldPtr = child;
+                    }
+                    else
+                    {
+                        if (tld == part)
+                        {
+                            child = tldPtr;
+                        }
+                        else
+                        {
+                            child = pointer.ChildMatch(part);
+                            tld = part;
+                            tldPtr = child;
+                        }
+                    }
+
                     if (child == null)
                     {
                         pointer = pointer.AddChild(part);
@@ -141,7 +180,15 @@ namespace mifty
                         pointer = child;
                     }
                 }
+
+                if (i % 1000 == 0)
+                {
+                    Console.Write($"\rAdded {i} of {entries.Length} entries. (1000 entries in {sw.ElapsedMilliseconds}ms.)");
+                    sw.Restart();
+                }
             }
+
+            Console.WriteLine("Naughty list loaded.");
 
             return naughtyList;
         }
