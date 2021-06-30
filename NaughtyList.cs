@@ -188,7 +188,7 @@ namespace mifty
                 }
             }
 
-            Console.WriteLine("Naughty list loaded.");
+            Console.WriteLine("\rNaughty list loaded.");
 
             return naughtyList;
         }
