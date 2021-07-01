@@ -75,7 +75,7 @@ namespace mifty
             // if we get this far we're on the right-hand side
             if (children.Count > keys.Count)
             {
-                return children[order - 1].FindLeaf(key);
+                return children[keys.Count].FindLeaf(key);
             }
 
             return this;
@@ -86,8 +86,14 @@ namespace mifty
             // to insert, find where the key could be inserted then check to see if there is room
             // if not we need to split and check parent etc.
             BTree<T> leaf = FindLeaf(key);
+            BTree<T> target = InsertSeparator(leaf, key);
 
-            return InsertSeparator(leaf, key);
+            while (target.parent != null)
+            {
+                target = target.parent;
+            }
+
+            return target;
         }
 
         BTree<T> InsertSeparator(BTree<T> leaf, IComparable<T> key, BTree<T> left = null, BTree<T> right = null)
@@ -99,12 +105,15 @@ namespace mifty
             }
             else
             {
+                bool added = false;
+
                 for (int i = 0; i < leaf.keys.Count; i++)
                 {
                     int comparison = key.CompareTo(leaf.keys[i]);
                     if (comparison < 0)
                     {
                         leaf.keys.Insert(i, (T)key);
+                        added = true;
 
                         if (left != null)
                         {
@@ -116,10 +125,15 @@ namespace mifty
                         }
                     }
                 }
+
+                if (!added)
+                {
+                    leaf.keys.Add((T)key);
+                }
             }
 
             // if we have broken our limit we need to split and recurse upwards until we find a node that can settle or we create a new root
-            if (leaf.keys.Count >= leaf.order - 1)
+            if (leaf.keys.Count > leaf.order - 1)
             {
                 // otherwise we need to split
                 BTree<T> newLeft = new BTree<T>(this.order);
@@ -157,7 +171,7 @@ namespace mifty
                 }
             }
 
-            return null;
+            return leaf;
         }
 
         BTree<T> Delete(T key)

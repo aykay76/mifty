@@ -41,8 +41,11 @@ namespace mifty
 
         static void Main(string[] args)
         {
-            BTree<int> testTree = new BTree<int>();
-            testTree.Insert(10);
+            BTree<int> testTree = new BTree<int>(3);
+            testTree = testTree.Insert(10);
+            testTree = testTree.Insert(20);
+            testTree = testTree.Insert(30);
+            testTree = testTree.Insert(40);
 
             Console.WriteLine("Getting ready...");
             // TODO: make this configurable to look in a specific directory, and have an option to load async or not
