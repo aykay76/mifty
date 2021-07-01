@@ -90,7 +90,7 @@ namespace mifty
             return InsertSeparator(leaf, key);
         }
 
-        BTree<T> InsertSeparator(BTree<T> leaf, IComparable<T> key)
+        BTree<T> InsertSeparator(BTree<T> leaf, IComparable<T> key, BTree<T> left = null, BTree<T> right = null)
         {
             // find the first key greater than the key to insert
             for (int i = 0; i < leaf.keys.Count; i++)
@@ -99,6 +99,15 @@ namespace mifty
                 if (comparison < 0)
                 {
                     leaf.keys.Insert(i, (T)key);
+
+                    if (left != null)
+                    {
+                        leaf.children.Insert(i, left);
+                    }
+                    if (right != null)
+                    {
+                        leaf.children[i + 1] = right;
+                    }
                 }
             }
 
@@ -137,7 +146,7 @@ namespace mifty
                 }
                 else
                 {
-                    return InsertSeparator(leaf.parent, separator);
+                    return InsertSeparator(leaf.parent, separator, newLeft, newRight);
                 }
             }
 
