@@ -81,7 +81,7 @@ namespace mifty
             return this;
         }
 
-        BTree<T> Insert(IComparable<T> key)
+        public BTree<T> Insert(IComparable<T> key)
         {
             // to insert, find where the key could be inserted then check to see if there is room
             // if not we need to split and check parent etc.
@@ -93,20 +93,27 @@ namespace mifty
         BTree<T> InsertSeparator(BTree<T> leaf, IComparable<T> key, BTree<T> left = null, BTree<T> right = null)
         {
             // find the first key greater than the key to insert
-            for (int i = 0; i < leaf.keys.Count; i++)
+            if (leaf.keys.Count == 0)
             {
-                int comparison = key.CompareTo(leaf.keys[i]);
-                if (comparison < 0)
+                leaf.keys.Add((T)key);
+            }
+            else
+            {
+                for (int i = 0; i < leaf.keys.Count; i++)
                 {
-                    leaf.keys.Insert(i, (T)key);
+                    int comparison = key.CompareTo(leaf.keys[i]);
+                    if (comparison < 0)
+                    {
+                        leaf.keys.Insert(i, (T)key);
 
-                    if (left != null)
-                    {
-                        leaf.children.Insert(i, left);
-                    }
-                    if (right != null)
-                    {
-                        leaf.children[i + 1] = right;
+                        if (left != null)
+                        {
+                            leaf.children.Insert(i, left);
+                        }
+                        if (right != null)
+                        {
+                            leaf.children[i + 1] = right;
+                        }
                     }
                 }
             }

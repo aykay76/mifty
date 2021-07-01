@@ -41,6 +41,9 @@ namespace mifty
 
         static void Main(string[] args)
         {
+            BTree<int> testTree = new BTree<int>();
+            testTree.Insert(10);
+
             Console.WriteLine("Getting ready...");
             // TODO: make this configurable to look in a specific directory, and have an option to load async or not
             dsl.MasterFileParser parser = new dsl.MasterFileParser();
