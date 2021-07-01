@@ -87,6 +87,11 @@ namespace mifty
             // if not we need to split and check parent etc.
             BTree<T> leaf = FindLeaf(key);
 
+            return InsertSeparator(leaf, key);
+        }
+
+        BTree<T> InsertSeparator(BTree<T> leaf, IComparable<T> key)
+        {
             // find the first key greater than the key to insert
             for (int i = 0; i < leaf.keys.Count; i++)
             {
@@ -105,7 +110,7 @@ namespace mifty
                 BTree<T> newRight = new BTree<T>(this.order);
 
                 int s = leaf.keys.Count / 2;
-                T separator = leaf.keys[s];
+                IComparable<T> separator = (IComparable<T>)leaf.keys[s];
 
                 // everything below the separator gets added to the left
                 for (int i = 0; i < s; i++)
@@ -125,14 +130,14 @@ namespace mifty
                     BTree<T> newRoot = new BTree<T>(this.order);
                     newLeft.parent = newRoot;
                     newRight.parent = newRoot;
-                    newRoot.keys.Add(separator);
+                    newRoot.keys.Add((T)separator);
                     newRoot.children.Add(newLeft);
                     newRoot.children.Add(newRight);
                     return newRoot;
                 }
                 else
                 {
-
+                    return InsertSeparator(leaf.parent, separator);
                 }
             }
 
