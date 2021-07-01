@@ -41,6 +41,13 @@ namespace mifty
 
         static void Main(string[] args)
         {
+            string[] entries = File.ReadAllLines("sorted-naughtylist.txt");
+            BTree<string> tree = new BTree<string>(10);
+            foreach (string s in entries)
+            {
+                tree = tree.Insert(s);
+            }
+
             BTree<int> testTree = new BTree<int>(3);
             testTree = testTree.Insert(10);
             testTree = testTree.Insert(20);
