@@ -55,7 +55,7 @@ namespace mifty
                 if (comparison < 0)
                 {
                     // if no child exists then we have no further to go to find a match
-                    if (children[i] == null)
+                    if (children.Count == 0)
                     {
                         return this;
                     }
@@ -107,7 +107,7 @@ namespace mifty
             {
                 bool added = false;
 
-                for (int i = 0; i < leaf.keys.Count; i++)
+                for (int i = 0; i < leaf.keys.Count && !added; i++)
                 {
                     int comparison = key.CompareTo(leaf.keys[i]);
                     if (comparison < 0)
@@ -118,10 +118,12 @@ namespace mifty
                         if (left != null)
                         {
                             leaf.children.Insert(i, left);
+                            left.parent = leaf;
                         }
                         if (right != null)
                         {
                             leaf.children[i + 1] = right;
+                            right.parent = leaf;
                         }
                     }
                 }
@@ -129,6 +131,23 @@ namespace mifty
                 if (!added)
                 {
                     leaf.keys.Add((T)key);
+
+                    if (left != null)
+                    {
+                        if (leaf.children.Count > 0)
+                        {
+                            leaf.children.RemoveAt(leaf.children.Count - 1);
+                        }
+
+                        leaf.children.Add(left);
+                        left.parent = leaf;
+                    }
+
+                    if (right != null)
+                    {
+                        leaf.children.Add(right);
+                        right.parent = leaf;
+                    }
                 }
             }
 
@@ -147,11 +166,27 @@ namespace mifty
                 {
                     newLeft.keys.Add(leaf.keys[i]);
                 }
+                if (leaf.children.Count >= s)
+                {
+                    for (int i = 0; i <= s; i++)
+                    {
+                        newLeft.children.Add(leaf.children[i]);
+                        leaf.children[i].parent = newLeft;
+                    }
+                }
 
                 // everything above the separator gets added to the right
                 for (int i = s + 1; i < leaf.keys.Count; i++)
                 {
                     newRight.keys.Add(leaf.keys[i]);
+                }
+                if (leaf.children.Count >= s)
+                {
+                    for (int i = s + 1; i < leaf.children.Count; i++)
+                    {
+                        newRight.children.Add(leaf.children[i]);
+                        leaf.children[i].parent = newRight;
+                    }
                 }
 
                 // separator gets inserted into parent, or is a new root

@@ -43,16 +43,17 @@ namespace mifty
         {
             string[] entries = File.ReadAllLines("sorted-naughtylist.txt");
             BTree<string> tree = new BTree<string>(10);
-            foreach (string s in entries)
+            for (int i = 0; i < entries.Length; i++)
             {
+                string s = entries[i];
                 tree = tree.Insert(s);
             }
 
-            BTree<int> testTree = new BTree<int>(3);
-            testTree = testTree.Insert(10);
-            testTree = testTree.Insert(20);
-            testTree = testTree.Insert(30);
-            testTree = testTree.Insert(40);
+            // BTree<int> testTree = new BTree<int>(3);
+            // for (int i = 11; i >= 1; i--)
+            // {
+            //     testTree = testTree.Insert(i);
+            // }
 
             Console.WriteLine("Getting ready...");
             // TODO: make this configurable to look in a specific directory, and have an option to load async or not
