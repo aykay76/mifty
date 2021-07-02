@@ -11,6 +11,8 @@ namespace mifty
         private Dictionary<char, Dictionary<char, int>> indices;
 
         public string Label { get; set; }
+
+        // TODO: replace this with a b-tree
         public Dictionary<char, List<NaughtyList>> Children { get; set; }
 
         public NaughtyList()

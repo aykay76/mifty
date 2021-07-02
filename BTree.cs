@@ -211,6 +211,7 @@ namespace mifty
 
         BTree<T> Delete(T key)
         {
+            // TODO: i'm not too worried about this right now because i'll only be loading into this tree - but for completeness and to be able to reuse this I should also implement a balanced delete.
             return null;
         }
     }
