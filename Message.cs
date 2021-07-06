@@ -69,7 +69,6 @@ namespace mifty
         {
             Answer answer = new Answer();
             answer.Name = ParseName(ref i);
-            Console.WriteLine($"Answer found: {answer.Name}");
             answer.Type = (ushort)((ushort)(bytes[i++] << 8) | (ushort)bytes[i++]);
             answer.Class = (ushort)((ushort)bytes[i++] << 8 | (ushort)bytes[i++]);
             answer.TimeToLive = (uint)bytes[i++] << 24 | (uint)bytes[i++] << 16 | (uint)bytes[i++] << 8 | (uint)bytes[i++];
@@ -113,8 +112,6 @@ namespace mifty
             NameServerCount = (ushort)((ushort)(bytes[8] << 8) | (ushort)bytes[9]);
             AdditionalRecordCount = (ushort)((ushort)(bytes[10] << 8) | (ushort)bytes[11]);
 
-            Console.WriteLine($"ID: {ID:X4}, Q: {QueryCount}, A: {AnswerCount}, N: {NameServerCount}, R: {AdditionalRecordCount}");
-
             //                                 1  1  1  1  1  1
             //   0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
             // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
@@ -140,7 +137,6 @@ namespace mifty
             Answers = new List<Answer>();
             for (int a = 0; a < AnswerCount; a++)
             {
-                Console.WriteLine($"Looking for answer at offset {i}");
                 Answer answer = ParseAnswer(ref i);
                 Answers.Add(answer);
             }
@@ -148,7 +144,6 @@ namespace mifty
             Authority = new List<Answer>();
             for (int a = 0; a < NameServerCount; a++)
             {
-                Console.WriteLine($"Looking for authority at offset {i}");
                 Answer answer = ParseAnswer(ref i);
                 Answers.Add(answer);
             }

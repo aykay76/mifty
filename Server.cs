@@ -51,7 +51,6 @@ namespace mifty
         // TODO: refactor to have v4 callback and v6 callback that will call a common function to process the incoming request
         public static void ReceiveCallbackV6(IAsyncResult asyncResult)
         {
-            Console.WriteLine("> ReceiveCallbackV6");
             Server server = (Server)asyncResult.AsyncState;
             // if (asyncResult == server.ar6)
             // {
@@ -61,7 +60,6 @@ namespace mifty
 
         public static void ReceiveCallbackV4(IAsyncResult asyncResult)
         {
-            Console.WriteLine("> ReceiveCallbackV4");
             Server server = (Server)asyncResult.AsyncState;
             // if (asyncResult == server.ar4)
             // {
@@ -135,7 +133,7 @@ namespace mifty
                 {
                     if (config.LogLevel >= LogLevel.Info)
                     {
-                        Console.WriteLine($"[INFO] Not forwarding or responding to {message.Queries[0].Name} - it's on the naughty list!");
+                        Console.WriteLine($"[INFO] Not forwarding or responding to {message.Queries[0].Name} - it's on the naughty list! 😯");
                     }
                 }
                 else
