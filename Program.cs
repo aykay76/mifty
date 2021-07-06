@@ -18,18 +18,10 @@ namespace mifty
                 string[] parts = entries[i].Split('.', StringSplitOptions.RemoveEmptyEntries);
                 Array.Reverse(parts);
 
-                bool first = true;
-                foreach (string part in parts)
+                for (int p = 0; p < parts.Length; p++)
                 {
-                    if (first)
-                    {
-                        first = false;
-                    }
-                    else
-                    {
-                        sb.Append(".");
-                    }
-                    sb.Append(part);
+                    if (p > 0) sb.Append(".");
+                    sb.Append(parts[p]);
                 }
 
                 reversed[i] = sb.ToString();
