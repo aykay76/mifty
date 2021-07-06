@@ -26,7 +26,7 @@ namespace mifty
 
             for (int i = 0; i < leaf.keys.Count; i++)
             {
-                int comparison = key.CompareTo(keys[i]);
+                int comparison = key.CompareTo(leaf.keys[i]);
 
                 // because the keys are ordered if the search key is less there is no point continuing
                 if (comparison < 0)

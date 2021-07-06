@@ -41,14 +41,6 @@ namespace mifty
 
         static void Main(string[] args)
         {
-            string[] entries = File.ReadAllLines("naughtylist.txt");
-            BTree<string> tree = new BTree<string>(20);
-            for (int i = 0; i < entries.Length; i++)
-            {
-                string s = entries[i];
-                tree = tree.Insert(s);
-            }
-
             Console.WriteLine("Getting ready...");
             // TODO: make this configurable to look in a specific directory, and have an option to load async or not
             dsl.MasterFileParser parser = new dsl.MasterFileParser();
@@ -66,7 +58,7 @@ namespace mifty
                               };
 
             NaughtyList naughtyList = null;
-            naughtyList = NaughtyList.FromFile("sorted-naughtylist.txt");
+            naughtyList = NaughtyList.FromFile("naughtylist.txt");
 
             // Create the server with config loaded from file
             // TODO: allow config file to be passed on command line

@@ -51,20 +51,22 @@ namespace mifty
         // TODO: refactor to have v4 callback and v6 callback that will call a common function to process the incoming request
         public static void ReceiveCallbackV6(IAsyncResult asyncResult)
         {
+            Console.WriteLine("> ReceiveCallbackV6");
             Server server = (Server)asyncResult.AsyncState;
-            if (asyncResult == server.ar6)
-            {
+            // if (asyncResult == server.ar6)
+            // {
                 server.CommonCallback(asyncResult, 6);
-            }
+            // }
         }
 
         public static void ReceiveCallbackV4(IAsyncResult asyncResult)
         {
+            Console.WriteLine("> ReceiveCallbackV4");
             Server server = (Server)asyncResult.AsyncState;
-            if (asyncResult == server.ar4)
-            {
+            // if (asyncResult == server.ar4)
+            // {
                 server.CommonCallback(asyncResult, 4);
-            }
+            // }
         }
 
         public void CommonCallback(IAsyncResult asyncResult, int ipVersion)
@@ -102,6 +104,16 @@ namespace mifty
                     Array.Copy(BufferV4, bytes, messageLength);
                 }
 
+                Message message = new Message(bytes);
+                IPEndPoint remoteIpEndpoint = remoteEndpoint as IPEndPoint;
+
+                // TODO: do some basic checks like does the message contain at least one query?
+
+                if (config.LogLevel >= LogLevel.Info)
+                {
+                    Console.WriteLine($"[INFO] Request received from {remoteIpEndpoint.Address.ToString()}:{remoteIpEndpoint.Port}; {message.Queries[0].Name}");
+                }
+
                 if (config.LogLevel >= LogLevel.Debug)
                 {
                     for (int i = 0; i < messageLength; i++)
@@ -111,20 +123,12 @@ namespace mifty
                         if (i % 16 == 15) Console.WriteLine();
                     }
                     Console.WriteLine();
+                    Console.WriteLine($"Total bytes: {messageLength}");
                 }
 
-                Message message = new Message(bytes);
-
-                // TODO: do some basic checks like does the message contain at least one query?
-                IPEndPoint remoteIpEndpoint = remoteEndpoint as IPEndPoint;
-
-                if (config.LogLevel >= LogLevel.Info)
-                {
-                    Console.WriteLine($"[INFO] Request received from {remoteIpEndpoint.Address.ToString()}:{remoteIpEndpoint.Port}; {message.Queries[0].Name}");
-                }
                 if (config.LogLevel >= LogLevel.Trace)
                 {
-                    Console.WriteLine("[TRACE] Checking naughty list, just once");
+                    Console.WriteLine("[TRACE] Checking naughty list, just once 😉");
                 }
 
                 if (naughtyList != null && naughtyList.Match(message.Queries[0].Name))
@@ -214,7 +218,7 @@ namespace mifty
 
             int retryCount = 5;
             int retryTime = 1000;
-            while (retryCount >= 0)
+            while (retryCount > 0)
             {
                 try
                 {
@@ -267,6 +271,14 @@ namespace mifty
             byte[] bytes = new byte[messageLength];
             Array.Copy(client.ResponseBuffer, bytes, messageLength);
 
+            Message message = new Message(bytes);
+            IPEndPoint forwarder = remoteEndpoint as IPEndPoint;
+
+            if (client.Server.config.LogLevel >= LogLevel.Info)
+            {
+                Console.WriteLine($"Response received from: {forwarder.Address.ToString()}:{forwarder.Port}");
+            }
+
             if (client.Server.config.LogLevel >= LogLevel.Debug)
             {
                 for (int i = 0; i < messageLength; i++)
@@ -275,14 +287,6 @@ namespace mifty
                     if (i % 16 == 15) Console.WriteLine();
                 }
                 Console.WriteLine();
-            }
-
-            Message message = new Message(bytes);
-            IPEndPoint forwarder = remoteEndpoint as IPEndPoint;
-
-            if (client.Server.config.LogLevel >= LogLevel.Info)
-            {
-                Console.WriteLine($"Response received from: {forwarder.Address.ToString()}:{forwarder.Port}");
             }
 
             // find the right client
@@ -349,11 +353,11 @@ namespace mifty
                 //    for the socket with this ioctl call. IOControl is analogous to the WSAIoctl method of Winsock 2
                 // Credit: https://www.winsocketdotnetworkprogramming.com/clientserversocketnetworkcommunication8.html
                 byte[] inValue = new byte[] { 0, 0, 0, 0 }; // == false
-                udp.IOControl(-1744830452, inValue, null);
+                UdpV6.IOControl(-1744830452, inValue, null);
 
                 // and begin...
                 EndPoint dummyEndpoint = new IPEndPoint(IPAddress.IPv6Any, 0);
-                udp.BeginReceiveFrom(BufferV6, PositionV6, BufferV6.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveCallbackV6), this);
+                ar6 = UdpV6.BeginReceiveFrom(BufferV6, PositionV6, BufferV6.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveCallbackV6), this);
             }
 
             if (!string.IsNullOrEmpty(config.ListenAddressV4))
@@ -372,11 +376,11 @@ namespace mifty
                 //    for the socket with this ioctl call. IOControl is analogous to the WSAIoctl method of Winsock 2
                 // Credit: https://www.winsocketdotnetworkprogramming.com/clientserversocketnetworkcommunication8.html
                 byte[] inValue = new byte[] { 0, 0, 0, 0 }; // == false
-                udp.IOControl(-1744830452, inValue, null);
+                UdpV4.IOControl(-1744830452, inValue, null);
 
                 // and begin...
                 EndPoint dummyEndpoint = new IPEndPoint(IPAddress.Any, 0);
-                udp.BeginReceiveFrom(BufferV4, PositionV4, BufferV4.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveCallbackV4), this);
+                ar4 = UdpV4.BeginReceiveFrom(BufferV4, PositionV4, BufferV4.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveCallbackV4), this);
             }
         }
 
