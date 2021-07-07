@@ -4,6 +4,8 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 
+// TODO: ensure compliance with RFC especially around TTL and other aspects
+
 namespace mifty
 {
     public class Server
@@ -13,20 +15,16 @@ namespace mifty
         Catalogue catalogue;
 
         // TODO: group these into a listening endpoint object that can be reused
-        public Socket UdpV6 { get; set; }
-        public byte[] BufferV6 { get; set; }
-        public int PositionV6 { get; set; }
-        public byte[] ResponseBufferV6 { get; set; }
-        public int ResponsePositionV6 { get; set; }
+        private Socket UdpV6;
+        private IAsyncResult ar6;
+        private byte[] BufferV6;
+        private int PositionV6;
 
-        public Socket UdpV4 { get; set; }
-        public byte[] BufferV4 { get; set; }
-        public int PositionV4 { get; set; }
-        public byte[] ResponseBufferV4 { get; set; }
-        public int ResponsePositionV4 { get; set; }
+        private Socket UdpV4;
+        private IAsyncResult ar4;
+        private byte[] BufferV4;
+        private int PositionV4;
 
-        IAsyncResult ar6;
-        IAsyncResult ar4;
 
         // TODO: I might replace this with a more rich object than just endpoint if I need to store more information
         //       for example, add timestamp so that I can measure latency
@@ -38,12 +36,8 @@ namespace mifty
         {
             BufferV6 = new byte[512];
             PositionV6 = 0;
-            ResponseBufferV6 = new byte[512];
-            ResponsePositionV6 = 0;
             BufferV4 = new byte[512];
             PositionV4 = 0;
-            ResponseBufferV4 = new byte[512];
-            ResponsePositionV4 = 0;
 
             Clients = new Dictionary<ushort, Client>();
         }
@@ -109,7 +103,7 @@ namespace mifty
 
                 if (config.LogLevel >= LogLevel.Info)
                 {
-                    Console.WriteLine($"[INFO] Request received from {remoteIpEndpoint.Address.ToString()}:{remoteIpEndpoint.Port}; {message.Queries[0].Name}");
+                    Console.WriteLine($"[INFO] {message.ID} Request received from {remoteIpEndpoint.Address.ToString()}:{remoteIpEndpoint.Port}; {message.Queries[0].Name}");
                 }
 
                 if (config.LogLevel >= LogLevel.Debug)
@@ -274,8 +268,10 @@ namespace mifty
 
             if (client.Server.config.LogLevel >= LogLevel.Info)
             {
-                Console.WriteLine($"Response received from: {forwarder.Address.ToString()}:{forwarder.Port}");
+                Console.WriteLine($"[INFO] {message.ID} Response received from: {forwarder.Address.ToString()}:{forwarder.Port}");
             }
+
+            // TODO: implement caching, being sure to respect TTL etc.
 
             if (client.Server.config.LogLevel >= LogLevel.Debug)
             {
@@ -295,7 +291,6 @@ namespace mifty
             }
             else
             {
-                // TODO: send back to v4 UDP socket
                 sent = client.Server.UdpV4.SendTo(bytes, 0, messageLength, SocketFlags.None, client.RemoteEndpoint);
             }
         }
