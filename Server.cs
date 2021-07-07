@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
+using Prometheus;
 
 // TODO: ensure compliance with RFC especially around TTL and other aspects
 
@@ -10,6 +11,9 @@ namespace mifty
 {
     public class Server
     {
+        private static readonly Counter totalRequestCounter = Metrics.CreateCounter("mifty_requests_total", "Total number of requests");
+        private static readonly Counter blockedRequestCounter = Metrics.CreateCounter("mifty_requests_blocked", "Number of requests blocked by naughty list");
+
         ServerConfig config = null;
         NaughtyList naughtyList;
         Catalogue catalogue;
@@ -106,6 +110,8 @@ namespace mifty
                     Console.WriteLine($"[INFO] {message.ID} Request received from {remoteIpEndpoint.Address.ToString()}:{remoteIpEndpoint.Port}; {message.Queries[0].Name}");
                 }
 
+                totalRequestCounter.Inc();
+
                 if (config.LogLevel >= LogLevel.Debug)
                 {
                     for (int i = 0; i < messageLength; i++)
@@ -125,6 +131,8 @@ namespace mifty
 
                 if (naughtyList != null && naughtyList.Match(message.Queries[0].Name))
                 {
+                    blockedRequestCounter.Inc();
+                    
                     if (config.LogLevel >= LogLevel.Info)
                     {
                         Console.WriteLine($"[INFO] Not forwarding or responding to {message.Queries[0].Name} - it's on the naughty list! 😯");

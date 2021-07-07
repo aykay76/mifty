@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading;
+using Prometheus;
 
 namespace mifty
 {
@@ -33,6 +34,9 @@ namespace mifty
 
         static void Main(string[] args)
         {
+            var metricServer = new MetricServer(hostname: "localhost", port: 1234);
+            metricServer.Start();
+
             Console.WriteLine("Getting ready...");
             
             // TODO: make this configurable to look in a specific directory, and have an option to load async or not
