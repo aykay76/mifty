@@ -31,10 +31,10 @@ dotnet add package prometheus-net --version 4.2.0
 
 Then set up a server that Prometheus can scrape by adding a couple of lines to startup code:
 ```csharp
-        static void Main(string[] args)
-        {
-            var metricServer = new MetricServer(hostname: "localhost", port: 1234);
-            metricServer.Start();
+static void Main(string[] args)
+{
+    var metricServer = new MetricServer(hostname: "localhost", port: 1234);
+    metricServer.Start();
 ```
 Add this server as a target to Prometheus by editing the targets in the configuration YML file:
 ```yaml
@@ -53,12 +53,12 @@ scrape_configs:
 Then add metrics that are appropriate for the project. Declare a counter, guage or histogram - i'm just using counters for now:
 
 ```csharp
-    private static readonly Counter totalRequestCounter = Metrics.CreateCounter("mifty_requests_total", "Total number of requests");
+private static readonly Counter totalRequestCounter = Metrics.CreateCounter("mifty_requests_total", "Total number of requests");
 ```
 
 Lastly increment the counter where appropriate:
 ```csharp            
-    totalRequestCounter.Inc();
+totalRequestCounter.Inc();
 ```
 
 And those metrics will flow into Prometheus (every 15 seconds by default) and can then be visualised in Grafana or similar.
