@@ -145,6 +145,10 @@ namespace mifty
                         Console.WriteLine("[TRACE] Creating client and sending request to forwarder");
                     }
 
+                    // TODO: check any zones I have loaded - they will take higher priority than forwarding (i.e. we only forward when we don't have an answer)
+
+                    // TODO: check cache - I may not need to go to the network at all
+
                     // create a new client
                     Client client = new Client();
                     client.Server = this;
@@ -163,8 +167,6 @@ namespace mifty
                         client.UdpOut = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
                         client.UdpOut.Bind(new IPEndPoint(IPAddress.Parse(config.ResolverAddressV4), 0));
                     }
-
-                    // TODO: check any zones I have loaded - they will take higher priority than forwarding (i.e. we only forward when we don't have an answer)
 
                     // for now for now i'm just going to forward to a known DNS server, see what happens
                     // TODO: if there are multiple do we send to all or just one at a time?
@@ -280,6 +282,9 @@ namespace mifty
             }
 
             // TODO: implement caching, being sure to respect TTL etc.
+            //       when caching responses, remember that the ID will change on a subsequent request
+            //       need to easily retrieve from the cache based on query class and type
+            // TODO: also need a mechanism to count down from TTL and remove from cache when stale
 
             if (client.Server.config.LogLevel >= LogLevel.Debug)
             {
