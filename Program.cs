@@ -52,6 +52,11 @@ namespace mifty
                     if (!Path.IsPathRooted(configFile))
                     {
                         configFile = Environment.CurrentDirectory + Path.DirectorySeparatorChar + configFile;
+                        if (!File.Exists(configFile))
+                        {
+                            Console.WriteLine($"Configuration file ({configFile}) could not be found, try again please.");
+                            return;
+                        }
                     }
                 }
                 else if (args[i] == "--help")
