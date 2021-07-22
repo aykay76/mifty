@@ -41,6 +41,11 @@ namespace mifty
 
         public static NaughtyList FromFile(string path)
         {
+            if (!File.Exists(path))
+            {
+                return null;
+            }
+
             NaughtyList naughtyList = new NaughtyList();
 
             string[] strings = File.ReadAllLines(path);

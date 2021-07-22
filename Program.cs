@@ -34,7 +34,33 @@ namespace mifty
 
         static void Main(string[] args)
         {
-            var metricServer = new MetricServer(hostname: "localhost", port: 1234);
+            string configFile = string.Empty;
+
+            // do some command line parsing
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (args[i] == "--config" || args[i] == "-c")
+                {
+                    i++;
+                    if (i == args.Length)
+                    {
+                        Console.WriteLine("You must specify a configuration file using '--config <filename>'");
+                        return;
+                    }
+
+                    configFile = args[i];
+                    if (!Path.IsPathRooted(configFile))
+                    {
+                        configFile = Environment.CurrentDirectory + Path.DirectorySeparatorChar + configFile;
+                    }
+                }
+                else if (args[i] == "--help")
+                {
+                    
+                }
+            }
+
+            var metricServer = new MetricServer(hostname: "*", port: 1234);
             metricServer.Start();
 
             Console.WriteLine("Getting ready...");
@@ -58,18 +84,15 @@ namespace mifty
             naughtyList = NaughtyList.FromFile("naughtylist.txt");
 
             // Create the server with config loaded from file
-            // TODO: allow config file to be passed on command line
-            //       make catalogue and naughty list optional as appropriate
             Server server = new Server();
-            server.WithConfig(ServerConfig.FromFile(Environment.CurrentDirectory + "\\windows.json")).WithCatalogue(catalogue).WithNaughtyList(naughtyList).Start();
+            server.WithConfig(ServerConfig.FromFile(configFile)).WithCatalogue(catalogue).WithNaughtyList(naughtyList).Start();
 
-            // TODO: make this a command line arg with default
             FileSystemWatcher watcher = new FileSystemWatcher(Environment.CurrentDirectory, "*.json");
             watcher.Changed += (o,e) => {
                 // wait a bit in case of race condition, it doesn't matter if it takes half a second to reload configuration
                 Thread.Sleep(500);
                 Console.WriteLine($"Processing change to {e.FullPath}...");
-                ServerConfig config = ServerConfig.FromFile(Environment.CurrentDirectory + "\\windows.json");
+                ServerConfig config = ServerConfig.FromFile(configFile);
                 server.WithConfig(config).Restart();
             };
             watcher.EnableRaisingEvents = true;
