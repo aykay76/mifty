@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Net;
 using System.Text;
 using mifty;
 
@@ -270,7 +271,8 @@ namespace dsl
                     else if (token.Type == tokenHostIPv6Address)
                     {
                         GetToken();
-                        entry.Data = ParseIPv6Address();
+                        entry.RDLength = 16;
+                        entry.DataBytes = ParseIPv6AddressBytes();
                     }
                     else if (token.Type == tokenWellKnownService)
                     {
@@ -393,6 +395,36 @@ namespace dsl
             GetToken();
 
             return builder.ToString();
+        }
+
+        protected byte[] ParseIPv6AddressBytes()
+        {
+            StringBuilder builder = new StringBuilder();
+
+            while (token.Type == TokenType.Numeric || token.Type == tokenColon || token.Type == TokenType.Identifier)
+            {
+                // alpha segments will be tagged as identifiers
+                if (token.Type == TokenType.Identifier)
+                {
+                    builder.Append(((WordToken)token).Word);
+                }
+                else if (token.Type == TokenType.Numeric)
+                {
+                    builder.Append((int)((NumberToken)token).Value);
+                }
+                else
+                {
+                    builder.Append(":");
+                }
+
+                // get next number, colon or bust
+                GetToken(false);
+            }
+
+            GetToken();
+
+            IPAddress address = IPAddress.Parse(builder.ToString());
+            return address.GetAddressBytes();
         }
 
         protected override void GetToken(bool skipWhitespace = true)

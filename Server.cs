@@ -212,7 +212,6 @@ namespace mifty
                             sent = UdpV4.SendTo(message.Bytes, 0, message.Bytes.Length, SocketFlags.None, remoteIpEndpoint);
                         }
                     }
-
                 }
             }
             catch (ArgumentException ex)
