@@ -6,7 +6,9 @@ namespace mifty
         public int TTL { get; set; }
         public ushort Class { get; set; }
         public ushort Type { get; set; }
+        public ushort RDLength { get; set; }
         public string Data { get; set; }
+        public byte[] DataBytes { get; set; }
 
         // if MX - yes, should have subclasses ;)
         public int Priority { get; set; }
@@ -25,7 +27,5 @@ namespace mifty
         public string Protocol { get; set; }
         // TODO: add bitfield for port numbers
 
-
-        // TODO: add byte representation for questions and answers on the wire, for efficiency
     }
 }

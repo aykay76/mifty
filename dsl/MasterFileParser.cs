@@ -264,7 +264,8 @@ namespace dsl
                     else if (token.Type == tokenHostAddress)
                     {
                         GetToken();
-                        entry.Data = ParseIPv4Address();
+                        entry.RDLength = 4;
+                        entry.DataBytes = ParseIPv4AddressBytes();
                     }
                     else if (token.Type == tokenHostIPv6Address)
                     {
@@ -340,6 +341,29 @@ namespace dsl
             GetToken();
 
             return builder.ToString();
+        }
+
+        protected byte[] ParseIPv4AddressBytes()
+        {
+            int pos = 0;
+            byte[] bytes = new byte[4];
+
+            // first octet
+            bytes[pos++] = (byte)((NumberToken)token).Value;
+
+            for (int i = 0; i < 3; i++)
+            {
+                // get dot
+                GetToken();
+
+                // next octet as a number
+                GetToken();
+                bytes[pos++] = (byte)((NumberToken)token).Value;
+            }
+
+            GetToken();
+
+            return bytes;
         }
 
         protected string ParseIPv6Address()
