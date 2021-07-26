@@ -23,5 +23,30 @@ namespace mifty
         public const ushort MAILB = 253;
         public const ushort MAILA = 254;
         public const ushort All = 255;
+
+        public static ushort Parse(string input)
+        {
+            if (input == "A") return QueryType.A;
+            else if (input == "NS") return QueryType.NS;
+            else if (input == "MD") return QueryType.MD;
+            else if (input == "CNAME") return QueryType.CNAME;
+            else if (input == "SOA") return QueryType.SOA;
+            else if (input == "MB") return QueryType.MB;
+            else if (input == "MG") return QueryType.MG;
+            else if (input == "MR") return QueryType.MR;
+            else if (input == "NULL") return QueryType.NULL;
+            else if (input == "WKS") return QueryType.WKS;
+            else if (input == "PTR") return QueryType.PTR;
+            else if (input == "HINFO") return QueryType.HINFO;
+            else if (input == "MINFO") return QueryType.MINFO;
+            else if (input == "MX") return QueryType.MX;
+            else if (input == "TXT") return QueryType.TXT;
+            else if (input == "AAAA") return QueryType.AAAA;
+            else if (input == "AFXR") return QueryType.AFXR;
+            else if (input == "MAILB") return QueryType.MAILB;
+            else if (input == "MAILA") return QueryType.MAILA;
+            
+            return QueryType.All;
+        }
     }
 }
