@@ -65,7 +65,7 @@ namespace mifty
                 }
             }
 
-            var metricServer = new MetricServer(hostname: "*", port: 1234);
+            var metricServer = new MetricServer(hostname: "172.17.112.1", port: 1234);
             metricServer.Start();
 
             Console.WriteLine("Getting ready...");

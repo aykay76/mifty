@@ -49,7 +49,7 @@ namespace mifty
             return catalogue;
         }
 
-        public Catalogue FindChild(string label)
+        private Catalogue FindChild(string label)
         {
             if (Children == null) return null;
 
@@ -58,6 +58,29 @@ namespace mifty
                 if (child.Label == label)
                 {
                     return child;
+                }
+            }
+
+            return null;
+        }
+
+        public MasterFileEntry FindEntry(Query query)
+        {
+            string[] parts = query.Name.Split('.');
+            Array.Reverse(parts);
+
+            Catalogue c = this;
+            for (int i = 0; i < parts.Length; i++)
+            {
+                c = c.FindChild(parts[i]);
+            }
+
+            if (c != null)
+            {
+                // we found the domain in the catalogue, now find the entry based on class and type
+                foreach (MasterFileEntry entry in c.Entries)
+                {
+                    Console.WriteLine(entry.Owner);
                 }
             }
 
