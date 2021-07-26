@@ -52,7 +52,7 @@ namespace mifty
             Server server = (Server)asyncResult.AsyncState;
             // if (asyncResult == server.ar6)
             // {
-                server.CommonCallback(asyncResult, 6);
+            server.CommonCallback(asyncResult, 6);
             // }
         }
 
@@ -61,7 +61,7 @@ namespace mifty
             Server server = (Server)asyncResult.AsyncState;
             // if (asyncResult == server.ar4)
             // {
-                server.CommonCallback(asyncResult, 4);
+            server.CommonCallback(asyncResult, 4);
             // }
         }
 
@@ -133,7 +133,7 @@ namespace mifty
                 if (naughtyList != null && naughtyList.Match(message.Queries[0].Name))
                 {
                     blockedRequestCounter.Inc();
-                    
+
                     if (config.LogLevel >= LogLevel.Info)
                     {
                         Console.WriteLine($"[INFO] Not forwarding or responding to {message.Queries[0].Name} - it's on the naughty list! 😯");
@@ -146,53 +146,73 @@ namespace mifty
                         Console.WriteLine("[TRACE] Creating client and sending request to forwarder");
                     }
 
+                    // do i have a match in my catalogue?
                     MasterFileEntry entry = catalogue.FindEntry(message.Queries[0]);
-                    if (entry != null)
+                    if (entry == null)
                     {
+                        // TODO: check cache - I may not need to go to the network at all
+
+                        // create a new client
+                        Client client = new Client();
+                        client.Server = this;
+                        client.IPVersion = ipVersion;
+                        client.RemoteEndpoint = remoteIpEndpoint;
+                        Clients[message.ID] = client;
+
+                        // make IPv4/IPv6 configurable or automatic based on config options
+                        if (ipVersion == 6)
+                        {
+                            client.UdpOut = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
+                            client.UdpOut.Bind(new IPEndPoint(IPAddress.Parse(config.ResolverAddressV6), 0));
+                        }
+                        else
+                        {
+                            client.UdpOut = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                            client.UdpOut.Bind(new IPEndPoint(IPAddress.Parse(config.ResolverAddressV4), 0));
+                        }
+
+                        // for now for now i'm just going to forward to a known DNS server, see what happens
+                        // TODO: if there are multiple do we send to all or just one at a time?
+
+                        if (ipVersion == 6)
+                        {
+                            foreach (string forwarder in config.ForwardersV6)
+                            {
+                                int sent = client.UdpOut.SendTo(bytes, 0, messageLength, SocketFlags.None, new IPEndPoint(IPAddress.Parse(forwarder), 53));
+                                client.UdpOut.BeginReceiveFrom(client.ResponseBuffer, client.ResponsePosition, client.ResponseBuffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveResponseCallback), client);
+                            }
+                        }
+                        else
+                        {
+                            foreach (string forwarder in config.ForwardersV4)
+                            {
+                                int sent = client.UdpOut.SendTo(bytes, 0, messageLength, SocketFlags.None, new IPEndPoint(IPAddress.Parse(forwarder), 53));
+                                client.UdpOut.BeginReceiveFrom(client.ResponseBuffer, client.ResponsePosition, client.ResponseBuffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveResponseCallback), client);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // TODO: if answer is a CNAME I need to repeat the search for what it points to in case it's local, then return that
+
+                        // add answer to message and send back
+                        message.AddAnswer(entry);
+
                         // TODO: construct response
                         Console.WriteLine("I have authority, need to construct response");
-                    }
 
-                    // TODO: check cache - I may not need to go to the network at all
-
-                    // create a new client
-                    Client client = new Client();
-                    client.Server = this;
-                    client.IPVersion = ipVersion;
-                    client.RemoteEndpoint = remoteIpEndpoint;
-                    Clients[message.ID] = client;
-
-                    // make IPv4/IPv6 configurable or automatic based on config options
-                    if (ipVersion == 6)
-                    {
-                        client.UdpOut = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
-                        client.UdpOut.Bind(new IPEndPoint(IPAddress.Parse(config.ResolverAddressV6), 0));
-                    }
-                    else
-                    {
-                        client.UdpOut = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-                        client.UdpOut.Bind(new IPEndPoint(IPAddress.Parse(config.ResolverAddressV4), 0));
-                    }
-
-                    // for now for now i'm just going to forward to a known DNS server, see what happens
-                    // TODO: if there are multiple do we send to all or just one at a time?
-
-                    if (ipVersion == 6)
-                    {
-                        foreach (string forwarder in config.ForwardersV6)
+                        // send straight back to requester
+                        int sent = 0;
+                        if (ipVersion == 6)
                         {
-                            int sent = client.UdpOut.SendTo(bytes, 0, messageLength, SocketFlags.None, new IPEndPoint(IPAddress.Parse(forwarder), 53));
-                            client.UdpOut.BeginReceiveFrom(client.ResponseBuffer, client.ResponsePosition, client.ResponseBuffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveResponseCallback), client);
+                            sent = UdpV6.SendTo(message.Bytes, 0, message.Bytes.Length, SocketFlags.None, remoteIpEndpoint);
+                        }
+                        else
+                        {
+                            sent = UdpV4.SendTo(message.Bytes, 0, message.Bytes.Length, SocketFlags.None, remoteIpEndpoint);
                         }
                     }
-                    else
-                    {
-                        foreach (string forwarder in config.ForwardersV4)
-                        {
-                            int sent = client.UdpOut.SendTo(bytes, 0, messageLength, SocketFlags.None, new IPEndPoint(IPAddress.Parse(forwarder), 53));
-                            client.UdpOut.BeginReceiveFrom(client.ResponseBuffer, client.ResponsePosition, client.ResponseBuffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveResponseCallback), client);
-                        }
-                    }
+
                 }
             }
             catch (ArgumentException ex)

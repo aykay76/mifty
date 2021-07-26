@@ -45,6 +45,10 @@ namespace mifty
 
         private byte[] bytes;
 
+        public byte[] Bytes {
+            get { return bytes; }
+        }
+
         //                                 1  1  1  1  1  1
         //   0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
         // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
@@ -76,6 +80,86 @@ namespace mifty
             answer.DataPos = i;
             i += answer.Length;
             return answer;
+        }
+
+        private byte[] EncodeName(string name)
+        {
+            // TODO: do something clever with "pointers" to reduce data on the wire
+            // for now just do a simple encoding of the name
+            int length = 0;
+            string[] parts = name.Split('.', StringSplitOptions.RemoveEmptyEntries);
+            foreach (string part in parts)
+            {
+                length++; // add a byte for the length
+                length += part.Length; // add enough bytes for the name part
+            }
+            length++; // add a byte for the terminating zero length
+
+            int i = 0;
+            byte[] bytes = new byte[length];
+            foreach (string part in parts)
+            {
+                bytes[i++] = (byte)part.Length;
+                foreach (char c in part)
+                {
+                    bytes[i++] = (byte)c;
+                }
+            }
+            bytes[i] = 0;
+
+            return bytes;
+        }
+
+        public void AddAnswer(MasterFileEntry entry)
+        {
+            // convert the entry to a byte array - I think this is the right place to do it because we have visibility of the whole message to see if we can use pointers in the name encoding
+            byte[] encodedName = EncodeName(entry.Owner);
+            byte[] entryData = entry.DataBytes;
+
+            AnswerCount++;
+
+            int answerLength = encodedName.Length + 10 + entryData.Length;
+            
+            // copy the initial queries etc.
+            int pos = 0;
+            byte[] newBytes = new byte[bytes.Length + answerLength];
+            Array.Copy(bytes, 0, newBytes, pos, bytes.Length);
+            pos += bytes.Length;
+
+            // this is not a query
+            newBytes[2] |= 0x84;
+
+            // update the answer count
+            newBytes[6] = (byte)(AnswerCount >> 8);
+            newBytes[7] = (byte)AnswerCount;
+
+            // NAME
+            Array.Copy(encodedName, 0, newBytes, pos, encodedName.Length);
+            pos += encodedName.Length;
+
+            // TYPE
+            newBytes[pos++] = (byte)(entry.Type >> 8);
+            newBytes[pos++] = (byte)entry.Type;
+
+            // CLASS
+            newBytes[pos++] = (byte)(entry.Class >> 8);
+            newBytes[pos++] = (byte)entry.Class;
+
+            // TTL
+            newBytes[pos++] = (byte)(entry.TTL >> 24);
+            newBytes[pos++] = (byte)(entry.TTL >> 16);
+            newBytes[pos++] = (byte)(entry.TTL >> 8);
+            newBytes[pos++] = (byte)entry.TTL;
+
+            // RDLENGTH
+            newBytes[pos++] = (byte)(entryData.Length >> 8);
+            newBytes[pos++] = (byte)entryData.Length;
+
+            // RDATA
+            Array.Copy(entryData, 0, newBytes, pos, entryData.Length);
+
+            // swap refs
+            bytes = newBytes;
         }
 
         public static Message FromFile(string filename)
