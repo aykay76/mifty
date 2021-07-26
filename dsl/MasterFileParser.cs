@@ -166,7 +166,7 @@ namespace dsl
                     // most likely a <rr> beginning with class
                     //     [<class>] [<TTL>] <type> <RDATA>
                     WordToken wt = token as WordToken;
-                    entry.Class = wt.Word;
+                    entry.Class = QueryClass.Parse(wt.Word);
 
                     GetToken();
                 }
@@ -175,7 +175,7 @@ namespace dsl
                     haveType = true;
 
                     WordToken wt = token as WordToken;
-                    entry.Type = wt.Word;
+                    entry.Type = QueryType.Parse(wt.Word);
 
                     // prepare to parse the data
                     if (token.Type == tokenCanonicalName)

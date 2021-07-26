@@ -4,8 +4,8 @@ namespace mifty
     {
         public string Owner { get; set; }
         public int TTL { get; set; }
-        public string Class { get; set; }
-        public string Type { get; set; }
+        public ushort Class { get; set; }
+        public ushort Type { get; set; }
         public string Data { get; set; }
 
         // if MX - yes, should have subclasses ;)
