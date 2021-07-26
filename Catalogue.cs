@@ -101,6 +101,7 @@ namespace mifty
                 {
                     if (entry.Type == QueryType.CNAME && entry.Class == query.Class)
                     {
+                        // TODO: instead of returning, I should take the name, change the type to A (AAAA?) and re-search (research?)
                         return entry;
                     }                    
                 }
