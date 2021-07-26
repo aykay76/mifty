@@ -146,11 +146,11 @@ namespace mifty
                         Console.WriteLine("[TRACE] Creating client and sending request to forwarder");
                     }
 
-                    // TODO: check any zones I have loaded - they will take higher priority than forwarding (i.e. we only forward when we don't have an answer)
-                    if (message.Queries[0].Name == "www.example.com")
+                    MasterFileEntry entry = catalogue.FindEntry(message.Queries[0]);
+                    if (entry != null)
                     {
-                        MasterFileEntry entry = catalogue.FindEntry(message.Queries[0]);
-                        // TODO: construct response and send, done.
+                        // TODO: construct response
+                        Console.WriteLine("I have authority, need to construct response");
                     }
 
                     // TODO: check cache - I may not need to go to the network at all

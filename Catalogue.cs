@@ -73,6 +73,8 @@ namespace mifty
             for (int i = 0; i < parts.Length; i++)
             {
                 c = c.FindChild(parts[i]);
+                // fail fast if no match
+                if (c == null) return null;
             }
 
             if (c != null)
@@ -80,7 +82,27 @@ namespace mifty
                 // we found the domain in the catalogue, now find the entry based on class and type
                 foreach (MasterFileEntry entry in c.Entries)
                 {
-                    Console.WriteLine(entry.Owner);
+                    if (entry.Type == query.Type && entry.Class == query.Class)
+                    {
+                        return entry;
+                    }                    
+                }
+
+                // If we get this far without a match we can check for CNAME
+                // see section 3.6.2 of RFC 1034:
+                // CNAME RRs cause special action in DNS software.  When a name server
+                // fails to find a desired RR in the resource set associated with the
+                // domain name, it checks to see if the resource set consists of a CNAME
+                // record with a matching class.  If so, the name server includes the CNAME
+                // record in the response and restarts the query at the domain name
+                // specified in the data field of the CNAME record.  The one exception to
+                // this rule is that queries which match the CNAME type are not restarted.
+                foreach (MasterFileEntry entry in c.Entries)
+                {
+                    if (entry.Type == QueryType.CNAME && entry.Class == query.Class)
+                    {
+                        return entry;
+                    }                    
                 }
             }
 
