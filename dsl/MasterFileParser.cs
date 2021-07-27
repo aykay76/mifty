@@ -145,6 +145,35 @@ namespace dsl
             return builder.ToString();
         }
 
+        // TODO: this doesn't belong here and isn't optimal.. may need a rethink
+        private byte[] EncodeName(string name)
+        {
+            // TODO: do something clever with "pointers" to reduce data on the wire
+            // for now just do a simple encoding of the name
+            int length = 0;
+            string[] parts = name.Split('.', StringSplitOptions.RemoveEmptyEntries);
+            foreach (string part in parts)
+            {
+                length++; // add a byte for the length
+                length += part.Length; // add enough bytes for the name part
+            }
+            length++; // add a byte for the terminating zero length
+
+            int i = 0;
+            byte[] bytes = new byte[length];
+            foreach (string part in parts)
+            {
+                bytes[i++] = (byte)part.Length;
+                foreach (char c in part)
+                {
+                    bytes[i++] = (byte)c;
+                }
+            }
+            bytes[i] = 0;
+
+            return bytes;
+        }
+
         protected void ParseResourceRecord()
         {
             bool haveType = false;
@@ -185,9 +214,11 @@ namespace dsl
                         GetToken();
 
                         entry.Data = ParseDomainName();
+                        entry.DataBytes = EncodeName(entry.Data);
                     }
                     else if (token.Type == tokenHostInfo)
                     {
+                        // TODO: finish this
                         // CPU string
                         GetToken();
 
