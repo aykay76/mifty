@@ -66,7 +66,7 @@ namespace mifty
 
         public MasterFileEntry FindEntry(Query query)
         {
-            string[] parts = query.Name.Split('.');
+            string[] parts = query.Name.Split('.', StringSplitOptions.RemoveEmptyEntries);
             Array.Reverse(parts);
 
             Catalogue c = this;

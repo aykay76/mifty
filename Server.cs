@@ -148,6 +148,16 @@ namespace mifty
 
                     // do i have a match in my catalogue?
                     MasterFileEntry entry = catalogue.FindEntry(message.Queries[0]);
+                    while (entry != null && entry.Type == QueryType.CNAME)
+                    {
+                        message.AddAnswer(entry);
+
+                        Query newQuery = new Query();
+                        newQuery.Class = message.Queries[0].Class;
+                        newQuery.Type = message.Queries[0].Type;
+                        newQuery.Name = entry.Data;
+                        entry = catalogue.FindEntry(newQuery);
+                    }
                     if (entry == null)
                     {
                         // TODO: check cache - I may not need to go to the network at all

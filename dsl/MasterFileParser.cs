@@ -214,6 +214,11 @@ namespace dsl
                         GetToken();
 
                         entry.Data = ParseDomainName();
+                        if (entry.Data[entry.Data.Length - 1] != '.')
+                        {
+                            entry.Data += ".";
+                            entry.Data += origin;
+                        }
                         entry.DataBytes = EncodeName(entry.Data);
                     }
                     else if (token.Type == tokenHostInfo)
@@ -237,16 +242,31 @@ namespace dsl
                         GetToken();
 
                         entry.Data = ParseDomainName();
+                        if (entry.Data[entry.Data.Length - 1] != '.')
+                        {
+                            entry.Data += ".";
+                            entry.Data += origin;
+                        }
                     }
                     else if (token.Type == tokenNameServer)
                     {
                         GetToken();
                         entry.Data = ParseDomainName();
+                        if (entry.Data[entry.Data.Length - 1] != '.')
+                        {
+                            entry.Data += ".";
+                            entry.Data += origin;
+                        }
                     }
                     else if (token.Type == tokenPointer)
                     {
                         GetToken();
                         entry.Data = ParseDomainName();
+                        if (entry.Data[entry.Data.Length - 1] != '.')
+                        {
+                            entry.Data += ".";
+                            entry.Data += origin;
+                        }
                     }
                     else if (token.Type == tokenAuthority)
                     {
@@ -254,9 +274,19 @@ namespace dsl
                         GetToken();
                         // TODO: if token is open parentheses then loop until close parentheses (and stop scanner from swallowing parentheses)
                         entry.NameServer = ParseDomainName();
+                        if (entry.NameServer[entry.NameServer.Length - 1] != '.')
+                        {
+                            entry.NameServer += ".";
+                            entry.NameServer += origin;
+                        }
 
                         // mailbox of responsible person
                         entry.Responsible = ParseDomainName();
+                        if (entry.Responsible[entry.Responsible.Length - 1] != '.')
+                        {
+                            entry.Responsible += ".";
+                            entry.Responsible += origin;
+                        }
 
                         // serial number
                         NumberToken nt = token as NumberToken;
