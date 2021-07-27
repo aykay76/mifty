@@ -11,7 +11,7 @@ namespace mifty
         public byte[] DataBytes { get; set; }
 
         // if MX - yes, should have subclasses ;)
-        public int Priority { get; set; }
+        public ushort Priority { get; set; }
 
         // if SOA
         public string NameServer { get; set; }

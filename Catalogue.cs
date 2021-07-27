@@ -64,6 +64,7 @@ namespace mifty
             return null;
         }
 
+        // TODO: need to return multiple entries for NS and MX, for example!
         public MasterFileEntry FindEntry(Query query)
         {
             string[] parts = query.Name.Split('.', StringSplitOptions.RemoveEmptyEntries);

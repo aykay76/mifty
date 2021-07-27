@@ -237,7 +237,7 @@ namespace dsl
                         GetToken();
 
                         NumberToken nt = token as NumberToken;
-                        entry.Priority = (int)nt.Value;
+                        entry.Priority = (ushort)nt.Value;
 
                         GetToken();
 
@@ -247,6 +247,15 @@ namespace dsl
                             entry.Data += ".";
                             entry.Data += origin;
                         }
+
+                        entry.DataBytes = EncodeName(entry.Data);
+
+                        // stuff the priority into the data bytes
+                        byte[] temp = new byte[entry.DataBytes.Length + 2];
+                        temp[0] = (byte)(entry.Priority >> 8);
+                        temp[1] = (byte)entry.Priority;
+                        Array.Copy(entry.DataBytes, 0, temp, 2, entry.DataBytes.Length);
+                        entry.DataBytes = temp;
                     }
                     else if (token.Type == tokenNameServer)
                     {
@@ -257,6 +266,7 @@ namespace dsl
                             entry.Data += ".";
                             entry.Data += origin;
                         }
+                        entry.DataBytes = EncodeName(entry.Data);
                     }
                     else if (token.Type == tokenPointer)
                     {
@@ -267,6 +277,7 @@ namespace dsl
                             entry.Data += ".";
                             entry.Data += origin;
                         }
+                        entry.DataBytes = EncodeName(entry.Data);
                     }
                     else if (token.Type == tokenAuthority)
                     {
@@ -313,12 +324,20 @@ namespace dsl
                         entry.MinimumTTL = (int)nt.Value;
 
                         GetToken();
+
+                        // TODO: add binary representation to entry.DataBytes
                     }
                     else if (token.Type == tokenText)
                     {
                         GetToken();
                         
                         // TODO: this is wrong and probably needs additional parsing
+                        // see RFC 1035, page 35:
+                        // <character-string> is expressed in one or two ways: as a contiguous set
+                        // of characters without interior spaces, or as a string beginning with a "
+                        // and ending with a ".  Inside a " delimited string any character can
+                        // occur, except for a " itself, which must be quoted using \ (back slash).
+
                         entry.Data = ((WordToken)token).Word;
 
                         GetToken();
