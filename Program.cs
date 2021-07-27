@@ -65,8 +65,9 @@ namespace mifty
                 }
             }
 
-            var metricServer = new MetricServer(hostname: "172.17.112.1", port: 1234);
-            metricServer.Start();
+            // TODO: make this configurable, can't assume Prometheus on Docker - and certainly DONT hardcode the address!!
+            // var metricServer = new MetricServer(hostname: "172.17.112.1", port: 1234);
+            // metricServer.Start();
 
             Console.WriteLine("Getting ready...");
             

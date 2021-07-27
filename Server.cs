@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.InteropServices;
 using System.Threading;
 using Prometheus;
 
@@ -393,9 +394,12 @@ namespace mifty
                 //    to wrap each UDP socket operation in a try/except, we'll disable this error
                 //    for the socket with this ioctl call. IOControl is analogous to the WSAIoctl method of Winsock 2
                 // Credit: https://www.winsocketdotnetworkprogramming.com/clientserversocketnetworkcommunication8.html
-                byte[] inValue = new byte[] { 0, 0, 0, 0 }; // == false
-                UdpV6.IOControl(-1744830452, inValue, null);
-
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    byte[] inValue = new byte[] { 0, 0, 0, 0 }; // == false
+                    UdpV6.IOControl(-1744830452, inValue, null);
+                }
+                
                 // and begin...
                 EndPoint dummyEndpoint = new IPEndPoint(IPAddress.IPv6Any, 0);
                 ar6 = UdpV6.BeginReceiveFrom(BufferV6, PositionV6, BufferV6.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveCallbackV6), this);
@@ -416,8 +420,11 @@ namespace mifty
                 //    to wrap each UDP socket operation in a try/except, we'll disable this error
                 //    for the socket with this ioctl call. IOControl is analogous to the WSAIoctl method of Winsock 2
                 // Credit: https://www.winsocketdotnetworkprogramming.com/clientserversocketnetworkcommunication8.html
-                byte[] inValue = new byte[] { 0, 0, 0, 0 }; // == false
-                UdpV4.IOControl(-1744830452, inValue, null);
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    byte[] inValue = new byte[] { 0, 0, 0, 0 }; // == false
+                    UdpV4.IOControl(-1744830452, inValue, null);
+                }
 
                 // and begin...
                 EndPoint dummyEndpoint = new IPEndPoint(IPAddress.Any, 0);
