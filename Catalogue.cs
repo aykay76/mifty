@@ -6,18 +6,17 @@ namespace mifty
     public class Catalogue
     {
         public string Label { get; set; }
-        // TODO: change this to be list of Answer's
-        public List<MasterFileEntry> Entries { get; set; }
+        public List<Answer> Answers { get; set; }
         public List<Catalogue> Children { get; set; }
 
         // add entries to a catalogue as described in section 6 of RFC 1035 - if this gets very big a list might not cut it and
         // I might change to a hashtable (Dictionary) with the entry name being key
-        public static Catalogue FromEntryList(List<MasterFileEntry> entries)
+        public static Catalogue FromAnswerList(List<Answer> entries)
         {
             Catalogue catalogue = new Catalogue();
-            foreach (MasterFileEntry entry in entries)
+            foreach (Answer answer in entries)
             {
-                string[] parts = entry.Owner.Split('.', StringSplitOptions.RemoveEmptyEntries);
+                string[] parts = answer.Name.Split('.', StringSplitOptions.RemoveEmptyEntries);
                 Array.Reverse(parts);
 
                 // start pointing at root, look for a match
@@ -39,12 +38,12 @@ namespace mifty
                     pointer = child;
                 }
 
-                if (pointer.Entries == null)
+                if (pointer.Answers == null)
                 {
-                    pointer.Entries = new List<MasterFileEntry>();
+                    pointer.Answers = new List<Answer>();
                 }
 
-                pointer.Entries.Add(entry);
+                pointer.Answers.Add(answer);
             }
 
             return catalogue;
@@ -66,7 +65,7 @@ namespace mifty
         }
 
         // TODO: need to return multiple entries for NS and MX, for example!
-        public MasterFileEntry FindEntry(Query query)
+        public Answer FindEntry(Query query)
         {
             string[] parts = query.Name.Split('.', StringSplitOptions.RemoveEmptyEntries);
             Array.Reverse(parts);
@@ -82,11 +81,11 @@ namespace mifty
             if (c != null)
             {
                 // we found the domain in the catalogue, now find the entry based on class and type
-                foreach (MasterFileEntry entry in c.Entries)
+                foreach (Answer answer in c.Answers)
                 {
-                    if (entry.Type == query.Type && entry.Class == query.Class)
+                    if (answer.Type == query.Type && answer.Class == query.Class)
                     {
-                        return entry;
+                        return answer;
                     }                    
                 }
 
@@ -99,12 +98,12 @@ namespace mifty
                 // record in the response and restarts the query at the domain name
                 // specified in the data field of the CNAME record.  The one exception to
                 // this rule is that queries which match the CNAME type are not restarted.
-                foreach (MasterFileEntry entry in c.Entries)
+                foreach (Answer answer in c.Answers)
                 {
-                    if (entry.Type == QueryType.CNAME && entry.Class == query.Class)
+                    if (answer.Type == QueryType.CNAME && answer.Class == query.Class)
                     {
                         // TODO: instead of returning, I should take the name, change the type to A (AAAA?) and re-search (research?)
-                        return entry;
+                        return answer;
                     }                    
                 }
             }

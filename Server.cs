@@ -148,7 +148,7 @@ namespace mifty
                     }
 
                     // do i have a match in my catalogue?
-                    MasterFileEntry entry = catalogue.FindEntry(message.Queries[0]);
+                    Answer entry = catalogue.FindEntry(message.Queries[0]);
                     while (entry != null && entry.Type == QueryType.CNAME)
                     {
                         message.AddAnswer(entry);
@@ -156,7 +156,7 @@ namespace mifty
                         Query newQuery = new Query();
                         newQuery.Class = message.Queries[0].Class;
                         newQuery.Type = message.Queries[0].Type;
-                        newQuery.Name = entry.Data;
+                        newQuery.Name = entry.Name;
                         entry = catalogue.FindEntry(newQuery);
                     }
                     if (entry == null)

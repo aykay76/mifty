@@ -47,11 +47,11 @@ namespace dsl
         int ttl = 3600;
         string owner = string.Empty;
 
-        public List<MasterFileEntry> Entries { get; set; }
+        public List<Answer> Answers { get; set; }
 
         public MasterFileParser()
         {
-            Entries = new List<MasterFileEntry>();
+            Answers = new List<Answer>();
         }
         
         public override void Parse(string filename)
@@ -178,7 +178,7 @@ namespace dsl
         {
             bool haveType = false;
 
-            MasterFileEntry entry = new MasterFileEntry();
+            Answer answer = new Answer();
 
             while (haveType == false && token.Type != TokenType.EndOfFile)
             {
@@ -187,7 +187,7 @@ namespace dsl
                     // most likely a <rr> beginning with TTL
                     //     [<TTL>] [<class>] <type> <RDATA>
                     NumberToken nt = token as NumberToken;
-                    entry.TTL = (int)nt.Value;
+                    answer.TimeToLive = (uint)nt.Value;
 
                     GetToken();
                 }
@@ -196,7 +196,7 @@ namespace dsl
                     // most likely a <rr> beginning with class
                     //     [<class>] [<TTL>] <type> <RDATA>
                     WordToken wt = token as WordToken;
-                    entry.Class = QueryClass.Parse(wt.Word);
+                    answer.Class = QueryClass.Parse(wt.Word);
 
                     GetToken();
                 }
@@ -205,7 +205,7 @@ namespace dsl
                     haveType = true;
 
                     WordToken wt = token as WordToken;
-                    entry.Type = QueryType.Parse(wt.Word);
+                    answer.Type = QueryType.Parse(wt.Word);
 
                     // prepare to parse the data
                     if (token.Type == tokenCanonicalName)
@@ -213,13 +213,13 @@ namespace dsl
                         // name string - probably fqdn
                         GetToken();
 
-                        entry.Data = ParseDomainName();
-                        if (entry.Data[entry.Data.Length - 1] != '.')
+                        string name = ParseDomainName();
+                        if (name[answer.Data.Length - 1] != '.')
                         {
-                            entry.Data += ".";
-                            entry.Data += origin;
+                            name += ".";
+                            name += origin;
                         }
-                        entry.DataBytes = EncodeName(entry.Data);
+                        answer.Data = EncodeName(name);
                     }
                     else if (token.Type == tokenHostInfo)
                     {
@@ -237,95 +237,98 @@ namespace dsl
                         GetToken();
 
                         NumberToken nt = token as NumberToken;
-                        entry.Priority = (ushort)nt.Value;
+                        ushort priority = (ushort)nt.Value;
 
                         GetToken();
 
-                        entry.Data = ParseDomainName();
-                        if (entry.Data[entry.Data.Length - 1] != '.')
+                        string name = ParseDomainName();
+                        if (name[answer.Data.Length - 1] != '.')
                         {
-                            entry.Data += ".";
-                            entry.Data += origin;
+                            name += ".";
+                            name += origin;
                         }
-
-                        entry.DataBytes = EncodeName(entry.Data);
+                        answer.Data = EncodeName(name);
 
                         // stuff the priority into the data bytes
-                        byte[] temp = new byte[entry.DataBytes.Length + 2];
-                        temp[0] = (byte)(entry.Priority >> 8);
-                        temp[1] = (byte)entry.Priority;
-                        Array.Copy(entry.DataBytes, 0, temp, 2, entry.DataBytes.Length);
-                        entry.DataBytes = temp;
+                        byte[] temp = new byte[answer.Data.Length + 2];
+                        temp[0] = (byte)(priority >> 8);
+                        temp[1] = (byte)priority;
+                        Array.Copy(answer.Data, 0, temp, 2, answer.Data.Length);
+                        answer.Data = temp;
+                        answer.Length = (ushort)answer.Data.Length;
                     }
                     else if (token.Type == tokenNameServer)
                     {
                         GetToken();
-                        entry.Data = ParseDomainName();
-                        if (entry.Data[entry.Data.Length - 1] != '.')
+                        string name = ParseDomainName();
+                        if (name[answer.Data.Length - 1] != '.')
                         {
-                            entry.Data += ".";
-                            entry.Data += origin;
+                            name += ".";
+                            name += origin;
                         }
-                        entry.DataBytes = EncodeName(entry.Data);
+                        answer.Data = EncodeName(name);
+                        answer.Length = (ushort)answer.Data.Length;
                     }
                     else if (token.Type == tokenPointer)
                     {
                         GetToken();
-                        entry.Data = ParseDomainName();
-                        if (entry.Data[entry.Data.Length - 1] != '.')
+                        string name = ParseDomainName();
+                        if (name[answer.Data.Length - 1] != '.')
                         {
-                            entry.Data += ".";
-                            entry.Data += origin;
+                            name += ".";
+                            name += origin;
                         }
-                        entry.DataBytes = EncodeName(entry.Data);
+                        answer.Data = EncodeName(name);
+                        answer.Length = (ushort)answer.Data.Length;
                     }
                     else if (token.Type == tokenAuthority)
                     {
                         // name server
                         GetToken();
+
                         // TODO: if token is open parentheses then loop until close parentheses (and stop scanner from swallowing parentheses)
-                        entry.NameServer = ParseDomainName();
-                        if (entry.NameServer[entry.NameServer.Length - 1] != '.')
+                        string nameServer = ParseDomainName();
+                        if (nameServer[nameServer.Length - 1] != '.')
                         {
-                            entry.NameServer += ".";
-                            entry.NameServer += origin;
+                            nameServer += ".";
+                            nameServer += origin;
                         }
 
                         // mailbox of responsible person
-                        entry.Responsible = ParseDomainName();
-                        if (entry.Responsible[entry.Responsible.Length - 1] != '.')
+                        string responsible = ParseDomainName();
+                        if (responsible[responsible.Length - 1] != '.')
                         {
-                            entry.Responsible += ".";
-                            entry.Responsible += origin;
+                            responsible += ".";
+                            responsible += origin;
                         }
 
                         // serial number
                         NumberToken nt = token as NumberToken;
-                        entry.SerialNumber = (int)nt.Value;
+                        int serialNumber = (int)nt.Value;
 
                         // refresh interval
                         GetToken();
                         nt = token as NumberToken;
-                        entry.RefreshInterval = (int)nt.Value;
+                        int refreshInterval = (int)nt.Value;
 
                         // retry interval
                         GetToken();
                         nt = token as NumberToken;
-                        entry.RetryInterval = (int)nt.Value;
+                        int retryInterval = (int)nt.Value;
 
                         // expiry timeout
                         GetToken();
                         nt = token as NumberToken;
-                        entry.ExpiryTimeout = (int)nt.Value;
+                        int expiryTimeout = (int)nt.Value;
 
                         // minimum ttl
                         GetToken();
                         nt = token as NumberToken;
-                        entry.MinimumTTL = (int)nt.Value;
+                        int minimumTTL = (int)nt.Value;
 
                         GetToken();
 
-                        // TODO: add binary representation to entry.DataBytes
+                        // TODO: add binary representation to answer.Data
                     }
                     else if (token.Type == tokenText)
                     {
@@ -338,21 +341,22 @@ namespace dsl
                         // and ending with a ".  Inside a " delimited string any character can
                         // occur, except for a " itself, which must be quoted using \ (back slash).
 
-                        entry.Data = ((WordToken)token).Word;
+                        answer.Data = System.Text.Encoding.UTF8.GetBytes(((WordToken)token).Word);
+                        answer.Length = (ushort)answer.Data.Length;
 
                         GetToken();
                     }
                     else if (token.Type == tokenHostAddress)
                     {
                         GetToken();
-                        entry.RDLength = 4;
-                        entry.DataBytes = ParseIPv4AddressBytes();
+                        answer.Length = 4;
+                        answer.Data = ParseIPv4AddressBytes();
                     }
                     else if (token.Type == tokenHostIPv6Address)
                     {
                         GetToken();
-                        entry.RDLength = 16;
-                        entry.DataBytes = ParseIPv6AddressBytes();
+                        answer.Length = 16;
+                        answer.Data = ParseIPv6AddressBytes();
                     }
                     else if (token.Type == tokenWellKnownService)
                     {
@@ -370,32 +374,32 @@ namespace dsl
                 {
                     // most likely a <rr> beginning with <owner>
                     //     <domain-name> [<class>] [<TTL>] <type> <RDATA>
-                    entry.Owner = ParseDomainName();
-                    if (entry.Owner != "@")
+                    answer.Name = ParseDomainName();
+                    if (answer.Name != "@")
                     {
                         // set default owner in case we reach another record that doesn't have an owner
                         // see section 5.1
-                        owner = entry.Owner;
+                        owner = answer.Name;
                     }
                 }
             }
 
-            if (entry.Owner == null)
+            if (answer.Name == null)
             {
-                entry.Owner = owner;
+                answer.Name = owner;
             }
 
-            if (entry.Owner == "@")
+            if (answer.Name == "@")
             {
-                entry.Owner = origin;
+                answer.Name = origin;
             }
-            else if (entry.Owner.EndsWith(".") == false)
+            else if (answer.Name.EndsWith(".") == false)
             {
-                entry.Owner += "." + origin;
+                answer.Name += "." + origin;
             }
 
             // add to the running list of entries found
-            Entries.Add(entry);
+            Answers.Add(answer);
 
             // Console.WriteLine($"Parsed resource record: {entry.Owner}\t{entry.Type}\t{entry.Class}\t{entry.Data}");
         }

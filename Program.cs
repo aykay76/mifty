@@ -78,7 +78,7 @@ namespace mifty
             dsl.MasterFileParser parser = new dsl.MasterFileParser();
             parser.Parse("example.zone");
 
-            Catalogue catalogue = Catalogue.FromEntryList(parser.Entries);
+            Catalogue catalogue = Catalogue.FromAnswerList(parser.Answers);
 
             Console.WriteLine("Read master file(s) successfully");
 

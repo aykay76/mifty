@@ -125,11 +125,11 @@ namespace mifty
             return bytes;
         }
 
-        public void AddAnswer(MasterFileEntry entry)
+        public void AddAnswer(Answer answer)
         {
             // convert the entry to a byte array - I think this is the right place to do it because we have visibility of the whole message to see if we can use pointers in the name encoding
-            byte[] encodedName = EncodeName(entry.Owner);
-            byte[] entryData = entry.DataBytes;
+            byte[] encodedName = EncodeName(answer.Name);
+            byte[] entryData = answer.Data;
 
             AnswerCount++;
 
@@ -153,18 +153,18 @@ namespace mifty
             pos += encodedName.Length;
 
             // TYPE
-            newBytes[pos++] = (byte)(entry.Type >> 8);
-            newBytes[pos++] = (byte)entry.Type;
+            newBytes[pos++] = (byte)(answer.Type >> 8);
+            newBytes[pos++] = (byte)answer.Type;
 
             // CLASS
-            newBytes[pos++] = (byte)(entry.Class >> 8);
-            newBytes[pos++] = (byte)entry.Class;
+            newBytes[pos++] = (byte)(answer.Class >> 8);
+            newBytes[pos++] = (byte)answer.Class;
 
             // TTL
-            newBytes[pos++] = (byte)(entry.TTL >> 24);
-            newBytes[pos++] = (byte)(entry.TTL >> 16);
-            newBytes[pos++] = (byte)(entry.TTL >> 8);
-            newBytes[pos++] = (byte)entry.TTL;
+            newBytes[pos++] = (byte)(answer.TimeToLive >> 24);
+            newBytes[pos++] = (byte)(answer.TimeToLive >> 16);
+            newBytes[pos++] = (byte)(answer.TimeToLive >> 8);
+            newBytes[pos++] = (byte)answer.TimeToLive;
 
             // RDLENGTH
             newBytes[pos++] = (byte)(entryData.Length >> 8);
