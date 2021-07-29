@@ -62,7 +62,7 @@ namespace mifty
         // |                     QCLASS                    |
         // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
 
-        // Response format
+        // Answer format
         //                                 1  1  1  1  1  1
         //   0  1  2  3  4  5  6  7  8  9  0  1  2  3  4  5
         // +--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+--+
@@ -91,7 +91,8 @@ namespace mifty
             answer.Class = (ushort)((ushort)bytes[i++] << 8 | (ushort)bytes[i++]);
             answer.TimeToLive = (uint)bytes[i++] << 24 | (uint)bytes[i++] << 16 | (uint)bytes[i++] << 8 | (uint)bytes[i++];
             answer.Length = (ushort)((ushort)bytes[i++] << 8 | (ushort)bytes[i++]);
-            answer.DataPos = i;
+            answer.Data = new byte[answer.Length];
+            Array.Copy(bytes, i, answer.Data, 0, answer.Length);
             i += answer.Length;
             return answer;
         }

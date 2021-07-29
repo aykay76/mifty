@@ -37,6 +37,9 @@ namespace mifty
             string configFile = string.Empty;
 
             // do some command line parsing
+            // TODO: need option for path to zone files
+            //       need option for naughty list
+            //       need option for turning off dynamic config
             for (int i = 0; i < args.Length; i++)
             {
                 if (args[i] == "--config" || args[i] == "-c")

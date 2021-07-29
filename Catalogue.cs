@@ -6,6 +6,7 @@ namespace mifty
     public class Catalogue
     {
         public string Label { get; set; }
+        // TODO: change this to be list of Answer's
         public List<MasterFileEntry> Entries { get; set; }
         public List<Catalogue> Children { get; set; }
 

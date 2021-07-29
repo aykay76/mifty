@@ -1,5 +1,6 @@
 namespace mifty
 {
+    // TODO: get rid of this and just read "Answer" entries from the zone files - that's basically what they are!
     public class MasterFileEntry
     {
         public string Owner { get; set; }

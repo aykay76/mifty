@@ -7,6 +7,6 @@ namespace mifty
         public ushort Class { get; set; }
         public uint TimeToLive { get; set; }
         public ushort Length { get; set; }
-        public int DataPos { get; set; }
+        public byte[] Data { get; set; }
     }
 }
