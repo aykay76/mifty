@@ -159,6 +159,7 @@ namespace mifty
                         newQuery.Name = entry.DataString;
                         entry = catalogue.FindEntry(newQuery);
                     }
+                    
                     if (entry == null)
                     {
                         // TODO: check cache - I may not need to go to the network at all
@@ -181,9 +182,6 @@ namespace mifty
                             client.UdpOut = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
                             client.UdpOut.Bind(new IPEndPoint(IPAddress.Parse(config.ResolverAddressV4), 0));
                         }
-
-                        // for now for now i'm just going to forward to a known DNS server, see what happens
-                        // TODO: if there are multiple do we send to all or just one at a time?
 
                         if (ipVersion == 6)
                         {
