@@ -214,12 +214,13 @@ namespace dsl
                         GetToken();
 
                         string name = ParseDomainName();
-                        if (name[answer.Data.Length - 1] != '.')
+                        if (name[name.Length - 1] != '.')
                         {
                             name += ".";
                             name += origin;
                         }
                         answer.Data = EncodeName(name);
+                        answer.DataString = name;
                     }
                     else if (token.Type == tokenHostInfo)
                     {
@@ -242,12 +243,13 @@ namespace dsl
                         GetToken();
 
                         string name = ParseDomainName();
-                        if (name[answer.Data.Length - 1] != '.')
+                        if (name[name.Length - 1] != '.')
                         {
                             name += ".";
                             name += origin;
                         }
                         answer.Data = EncodeName(name);
+                        answer.DataString = name;
 
                         // stuff the priority into the data bytes
                         byte[] temp = new byte[answer.Data.Length + 2];
@@ -261,24 +263,26 @@ namespace dsl
                     {
                         GetToken();
                         string name = ParseDomainName();
-                        if (name[answer.Data.Length - 1] != '.')
+                        if (name[name.Length - 1] != '.')
                         {
                             name += ".";
                             name += origin;
                         }
                         answer.Data = EncodeName(name);
+                        answer.DataString = name;
                         answer.Length = (ushort)answer.Data.Length;
                     }
                     else if (token.Type == tokenPointer)
                     {
                         GetToken();
                         string name = ParseDomainName();
-                        if (name[answer.Data.Length - 1] != '.')
+                        if (name[name.Length - 1] != '.')
                         {
                             name += ".";
                             name += origin;
                         }
                         answer.Data = EncodeName(name);
+                        answer.DataString = name;
                         answer.Length = (ushort)answer.Data.Length;
                     }
                     else if (token.Type == tokenAuthority)

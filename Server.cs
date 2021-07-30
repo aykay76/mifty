@@ -156,7 +156,7 @@ namespace mifty
                         Query newQuery = new Query();
                         newQuery.Class = message.Queries[0].Class;
                         newQuery.Type = message.Queries[0].Type;
-                        newQuery.Name = entry.Name;
+                        newQuery.Name = entry.DataString;
                         entry = catalogue.FindEntry(newQuery);
                     }
                     if (entry == null)

@@ -129,11 +129,10 @@ namespace mifty
         {
             // convert the entry to a byte array - I think this is the right place to do it because we have visibility of the whole message to see if we can use pointers in the name encoding
             byte[] encodedName = EncodeName(answer.Name);
-            byte[] entryData = answer.Data;
 
             AnswerCount++;
 
-            int answerLength = encodedName.Length + 10 + entryData.Length;
+            int answerLength = encodedName.Length + 10 + answer.Data.Length;
             
             // copy the initial queries etc.
             int pos = 0;
@@ -167,11 +166,11 @@ namespace mifty
             newBytes[pos++] = (byte)answer.TimeToLive;
 
             // RDLENGTH
-            newBytes[pos++] = (byte)(entryData.Length >> 8);
-            newBytes[pos++] = (byte)entryData.Length;
+            newBytes[pos++] = (byte)(answer.Length >> 8);
+            newBytes[pos++] = (byte)answer.Length;
 
             // RDATA
-            Array.Copy(entryData, 0, newBytes, pos, entryData.Length);
+            Array.Copy(answer.Data, 0, newBytes, pos, answer.Length);
 
             // swap refs
             bytes = newBytes;
