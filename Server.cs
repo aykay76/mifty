@@ -204,12 +204,9 @@ namespace mifty
                     }
                     else
                     {
-                        // TODO: if answer is a CNAME I need to repeat the search for what it points to in case it's local, then return that
-
                         // add answer to message and send back
                         message.AddAnswer(entry);
 
-                        // TODO: construct response
                         Console.WriteLine("I have authority, need to construct response");
 
                         // send straight back to requester
