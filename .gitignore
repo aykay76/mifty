@@ -2,3 +2,4 @@ bin/
 obj/
 dnscrypt-proxy.blacklist.txt
 .vscode/
+.vs/
