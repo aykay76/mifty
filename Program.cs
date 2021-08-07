@@ -9,9 +9,9 @@ namespace mifty
 {
     class Program
     {
-        static void ConvertNaughtyList()
+        static void ConvertNaughtyList(string filename)
         {
-            string[] entries = File.ReadAllLines("dnscrypt-proxy.blacklist.txt");
+            string[] entries = File.ReadAllLines(filename);
             string[] reversed = new string[entries.Length];
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < entries.Length; i++)
@@ -61,6 +61,19 @@ namespace mifty
                             return;
                         }
                     }
+                }
+                else if (args[i] == "--convert")
+                {
+                    i++;
+                    if (i == args.Length)
+                    {
+                        Console.WriteLine("You must specify a configuration file using '--config <filename>'");
+                        return;
+                    }
+
+                    Console.WriteLine($"Converting {args[i]}");
+                    ConvertNaughtyList(args[i]);
+                    return;
                 }
                 else if (args[i] == "--help")
                 {
