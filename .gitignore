@@ -1,5 +1,6 @@
 bin/
 obj/
 dnscrypt-proxy.blacklist.txt
+naughtylist.txt
 .vscode/
 .vs/
