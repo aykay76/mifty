@@ -66,6 +66,29 @@ namespace mifty
             // }
         }
 
+        protected void ProcessQuery(Query query, Message message)
+        {
+            List<Answer> answers = catalogue.FindEntry(query);
+
+            if (answers == null) return;
+
+            foreach (Answer answer in answers)
+            {
+                // add answer, whatever it is
+                message.AddAnswer(answer);
+
+                // if it's a CNAME recursively check
+                if (answer.Type == QueryType.CNAME)
+                {
+                    Query newQuery = new Query();
+                    newQuery.Class = query.Class;
+                    newQuery.Type = query.Type;
+                    newQuery.Name = answer.DataString;
+                    ProcessQuery(newQuery, message);
+                }
+            }
+        }
+
         public void CommonCallback(IAsyncResult asyncResult, int ipVersion)
         {
             EndPoint dummyEndpoint = null;
@@ -148,28 +171,7 @@ namespace mifty
                     }
 
                     // do i have a match in my catalogue?
-                    List<Answer> answers = catalogue.FindEntry(message.Queries[0]);
-                    bool cname = true;
-                    while (answers != null && answers.Count > 0 && cname == true)
-                    {
-                        cname = false;
-
-                        foreach (Answer answer in answers)
-                        {
-                            // add answer, whatever it is
-                            message.AddAnswer(answer);
-
-                            if (answer.Type == QueryType.CNAME)
-                            {
-                                cname = true;
-                                Query newQuery = new Query();
-                                newQuery.Class = message.Queries[0].Class;
-                                newQuery.Type = message.Queries[0].Type;
-                                newQuery.Name = answer.DataString;
-                                answers = catalogue.FindEntry(newQuery);
-                            }
-                        }
-                    }
+                    ProcessQuery(message.Queries[0], message);
                     
                     if (message.AnswerCount == 0)
                     {
@@ -214,6 +216,15 @@ namespace mifty
                     else
                     {
                         Console.WriteLine("I have authority, need to construct response");
+
+                        for (int i = 0; i < message.Bytes.Length; i++)
+                        {
+                            // TODO: decode names and the other fields, output nice logs
+                            Console.Write($"{message.Bytes[i]:X2} ");
+                            if (i % 16 == 15) Console.WriteLine();
+                        }
+                        Console.WriteLine();
+                        Console.WriteLine($"Total bytes: {message.Bytes.Length}");
 
                         // send straight back to requester
                         int sent = 0;

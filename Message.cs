@@ -167,11 +167,11 @@ namespace mifty
             newBytes[pos++] = (byte)answer.TimeToLive;
 
             // RDLENGTH
-            newBytes[pos++] = (byte)(answer.Length >> 8);
-            newBytes[pos++] = (byte)answer.Length;
+            newBytes[pos++] = (byte)(answer.Data.Length >> 8);
+            newBytes[pos++] = (byte)answer.Data.Length;
 
             // RDATA
-            Array.Copy(answer.Data, 0, newBytes, pos, answer.Length);
+            Array.Copy(answer.Data, 0, newBytes, pos, answer.Data.Length);
 
             // swap refs
             bytes = newBytes;
