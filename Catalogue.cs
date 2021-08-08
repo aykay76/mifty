@@ -64,9 +64,9 @@ namespace mifty
             return null;
         }
 
-        // TODO: need to return multiple entries for NS and MX, for example!
-        public Answer FindEntry(Query query)
+        public List<Answer> FindEntry(Query query)
         {
+            List<Answer> answers = new List<Answer>();
             string[] parts = query.Name.Split('.', StringSplitOptions.RemoveEmptyEntries);
             Array.Reverse(parts);
 
@@ -85,7 +85,7 @@ namespace mifty
                 {
                     if (answer.Type == query.Type && answer.Class == query.Class)
                     {
-                        return answer;
+                        answers.Add(answer);
                     }                    
                 }
 
@@ -102,13 +102,12 @@ namespace mifty
                 {
                     if (answer.Type == QueryType.CNAME && answer.Class == query.Class)
                     {
-                        // TODO: instead of returning, I should take the name, change the type to A (AAAA?) and re-search (research?)
-                        return answer;
+                        answers.Add(answer);
                     }                    
                 }
             }
 
-            return null;
+            return answers;
         }
     }
 }

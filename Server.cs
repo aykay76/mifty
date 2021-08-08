@@ -148,19 +148,30 @@ namespace mifty
                     }
 
                     // do i have a match in my catalogue?
-                    Answer entry = catalogue.FindEntry(message.Queries[0]);
-                    while (entry != null && entry.Type == QueryType.CNAME)
+                    List<Answer> answers = catalogue.FindEntry(message.Queries[0]);
+                    bool cname = true;
+                    while (answers != null && answers.Count > 0 && cname == true)
                     {
-                        message.AddAnswer(entry);
+                        cname = false;
 
-                        Query newQuery = new Query();
-                        newQuery.Class = message.Queries[0].Class;
-                        newQuery.Type = message.Queries[0].Type;
-                        newQuery.Name = entry.DataString;
-                        entry = catalogue.FindEntry(newQuery);
+                        foreach (Answer answer in answers)
+                        {
+                            // add answer, whatever it is
+                            message.AddAnswer(answer);
+
+                            if (answer.Type == QueryType.CNAME)
+                            {
+                                cname = true;
+                                Query newQuery = new Query();
+                                newQuery.Class = message.Queries[0].Class;
+                                newQuery.Type = message.Queries[0].Type;
+                                newQuery.Name = answer.DataString;
+                                answers = catalogue.FindEntry(newQuery);
+                            }
+                        }
                     }
                     
-                    if (entry == null)
+                    if (message.AnswerCount == 0)
                     {
                         // TODO: check cache - I may not need to go to the network at all
 
@@ -202,9 +213,6 @@ namespace mifty
                     }
                     else
                     {
-                        // add answer to message and send back
-                        message.AddAnswer(entry);
-
                         Console.WriteLine("I have authority, need to construct response");
 
                         // send straight back to requester
