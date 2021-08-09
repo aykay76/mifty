@@ -192,6 +192,14 @@ namespace mifty
             }
         }
 
+        protected string ZoneOf(string name)
+        {
+            int index = name.IndexOf('.');
+            if (index == -1) return string.Empty;
+
+            return name.Substring(index + 1);
+        }
+
         protected void ProcessUpdate(Message message)
         {
             // see 3.1.2 of RFC 2136
@@ -203,6 +211,7 @@ namespace mifty
 
             // TODO: if i'm a slave (not yet implemented masters and slaves) need to forward to master for zone - assuming master for now
 
+            // 3.2 Check pre-requisites
             // see section 3.2.5 of RFC 2136
             foreach (Answer requisite in message.Prerequisites)
             {
@@ -211,7 +220,137 @@ namespace mifty
                     message.ResponseCode = ResponseCode.FormatError;
                     return;
                 }
+
+                if (ZoneOf(requisite.Name) != message.Zones[0].Name)
+                {
+                    message.ResponseCode = ResponseCode.NotZone;
+                    return;
+                }
+
+                if (requisite.Class == QueryClass.All)
+                {
+                    if (requisite.Length != 0)
+                    {
+                        message.ResponseCode = ResponseCode.FormatError;
+                        return;
+                    }
+
+                    if (requisite.Type == QueryType.All)
+                    {
+                        message.ResponseCode = ResponseCode.NameError;
+                        return;
+                    }
+                    else
+                    {
+                        // TODO: if (!zone_rrset<rr.name, rr.type>)
+                        message.ResponseCode = ResponseCode.NXRRSET;
+                        return;
+                    }
+                }
+
+                if (requisite.Class == QueryClass.None)
+                {
+                    if (requisite.Length != 0)
+                    {
+                        message.ResponseCode = ResponseCode.FormatError;
+                        return;
+                    }
+
+                    if (requisite.Type == QueryType.All)
+                    {
+                        // TODO:if (zone_name<rr.name>)
+                        message.ResponseCode = ResponseCode.YXDOMAIN;
+                        return;
+                    }
+                    else
+                    {
+                        // TODO: if (!zone_rrset<rr.name, rr.type>)
+                        message.ResponseCode = ResponseCode.YXRRSET;
+                        return;
+                    }
+                }
+
+                if (requisite.Class == message.Zones[0].Class)
+                {
+                    // TODO: add to some temp structure
+                }
+                else
+                {
+                    message.ResponseCode = ResponseCode.FormatError;
+                    return;
+                }
             }
+
+            // TODO: check prerequisites match
+            // for rrset in temp
+            //     if (zone_rrset<rrset.name, rrset.type> != rrset)
+            //             return (NXRRSET)
+
+            // 3.3 Check permissions
+            // TODO: implement permissions!! :)
+
+            // 3.4 Do updates
+            foreach (Answer update in message.Updates)
+            {
+                // TODO: pre-scan
+                // [rr] for rr in updates
+                //     if (zone_of(rr.name) != ZNAME)
+                //             return (NOTZONE);
+                //     if (rr.class == zclass)
+                //             if (rr.type & ANY|AXFR|MAILA|MAILB)
+                //                 return (FORMERR)
+                //     elsif (rr.class == ANY)
+                //             if (rr.ttl != 0 || rr.rdlength != 0
+                //                 || rr.type & AXFR|MAILA|MAILB)
+                //                 return (FORMERR)
+                //     elsif (rr.class == NONE)
+                //             if (rr.ttl != 0 || rr.type & ANY|AXFR|MAILA|MAILB)
+                //                 return (FORMERR)
+                //     else
+                //             return (FORMERR)
+
+            }
+
+            // TODO: apply updates
+            // [rr] for rr in updates
+            //     if (rr.class == zclass)
+            //             if (rr.type == CNAME)
+            //                 if (zone_rrset<rr.name, ~CNAME>)
+            //                     next [rr]
+            //             elsif (zone_rrset<rr.name, CNAME>)
+            //                 next [rr]
+            //             if (rr.type == SOA)
+            //                 if (!zone_rrset<rr.name, SOA> ||
+            //                     zone_rr<rr.name, SOA>.serial > rr.soa.serial)
+            //                     next [rr]
+            //             for zrr in zone_rrset<rr.name, rr.type>
+            //                 if (rr.type == CNAME || rr.type == SOA ||
+            //                     (rr.type == WKS && rr.proto == zrr.proto &&
+            //                     rr.address == zrr.address) ||
+            //                     rr.rdata == zrr.rdata)
+            //                     zrr = rr
+            //                     next [rr]
+            //             zone_rrset<rr.name, rr.type> += rr
+            //     elsif (rr.class == ANY)
+            //             if (rr.type == ANY)
+            //                 if (rr.name == zname)
+            //                     zone_rrset<rr.name, ~(SOA|NS)> = Nil
+            //                 else
+            //                     zone_rrset<rr.name, *> = Nil
+            //             elsif (rr.name == zname &&
+            //                 (rr.type == SOA || rr.type == NS))
+            //                 next [rr]
+            //             else
+            //                 zone_rrset<rr.name, rr.type> = Nil
+            //     elsif (rr.class == NONE)
+            //             if (rr.type == SOA)
+            //                 next [rr]
+            //             if (rr.type == NS && zone_rrset<rr.name, NS> == rr)
+            //                 next [rr]
+            //             zone_rr<rr.name, rr.type, rr.data> = Nil
+            // return (NOERROR)
+            
+            // TODO: construct and send response
         }
 
         public void CommonCallback(IAsyncResult asyncResult, int ipVersion)
