@@ -39,6 +39,11 @@ namespace mifty
         public ushort NameServerCount { get; set; }
         public ushort AdditionalRecordCount { get; set; }
 
+        public ushort ZoneCount { get; set; }
+        public ushort PrerequisiteCount { get; set; }
+        public ushort UpdateCount { get; set; }
+        public ushort AdditionalDataCount { get; set; }
+
         public List<Query> Queries { get; set; }
         public List<Answer> Answers { get; set; }
         public List<Answer> Authority { get; set; }
@@ -206,41 +211,52 @@ namespace mifty
             RA = (bytes[3] & 0x80) == 0x80;
             ResponseCode = (byte)(bytes[3] & 0xf);
 
-            QueryCount = (ushort)((ushort)(bytes[4] << 8) | (ushort)bytes[5]);
-            AnswerCount = (ushort)((ushort)(bytes[6] << 8) | (ushort)bytes[7]);
-            NameServerCount = (ushort)((ushort)(bytes[8] << 8) | (ushort)bytes[9]);
-            AdditionalRecordCount = (ushort)((ushort)(bytes[10] << 8) | (ushort)bytes[11]);
-
-            int i = 12;
-            Queries = new List<Query>();
-            for (int q = 0; q < QueryCount; q++)
+            if (this.Opcode == mifty.Opcode.StandardQuery)
             {
-                Query query = new Query();
-                query.Name = ParseName(ref i);
-                query.Type = (ushort)((ushort)(bytes[i++] << 8) | (ushort)bytes[i++]);
-                query.Class = (ushort)((ushort)(bytes[i++] << 8) | (ushort)bytes[i++]);
-                Queries.Add(query);
+                QueryCount = (ushort)((ushort)(bytes[4] << 8) | (ushort)bytes[5]);
+                AnswerCount = (ushort)((ushort)(bytes[6] << 8) | (ushort)bytes[7]);
+                NameServerCount = (ushort)((ushort)(bytes[8] << 8) | (ushort)bytes[9]);
+                AdditionalRecordCount = (ushort)((ushort)(bytes[10] << 8) | (ushort)bytes[11]);
+
+                int i = 12;
+                Queries = new List<Query>();
+                for (int q = 0; q < QueryCount; q++)
+                {
+                    Query query = new Query();
+                    query.Name = ParseName(ref i);
+                    query.Type = (ushort)((ushort)(bytes[i++] << 8) | (ushort)bytes[i++]);
+                    query.Class = (ushort)((ushort)(bytes[i++] << 8) | (ushort)bytes[i++]);
+                    Queries.Add(query);
+                }
+
+                Answers = new List<Answer>();
+                for (int a = 0; a < AnswerCount; a++)
+                {
+                    Answer answer = ParseAnswer(ref i);
+                    Answers.Add(answer);
+                }
+
+                Authority = new List<Answer>();
+                for (int a = 0; a < NameServerCount; a++)
+                {
+                    Answer answer = ParseAnswer(ref i);
+                    Answers.Add(answer);
+                }
+
+                AdditionalRecords = new List<Answer>();
+                for (int a = 0; a < AdditionalRecordCount; a++)
+                {
+                    Answer answer = ParseAnswer(ref i);
+                    Answers.Add(answer);
+                }
             }
-
-            Answers = new List<Answer>();
-            for (int a = 0; a < AnswerCount; a++)
+            else if (this.Opcode == mifty.Opcode.Update)
             {
-                Answer answer = ParseAnswer(ref i);
-                Answers.Add(answer);
-            }
+                ZoneCount = (ushort)((ushort)(bytes[4] << 8) | (ushort)bytes[5]);
+                PrerequisiteCount = (ushort)((ushort)(bytes[6] << 8) | (ushort)bytes[7]);
+                UpdateCount = (ushort)((ushort)(bytes[8] << 8) | (ushort)bytes[9]);
+                AdditionalDataCount = (ushort)((ushort)(bytes[10] << 8) | (ushort)bytes[11]);
 
-            Authority = new List<Answer>();
-            for (int a = 0; a < NameServerCount; a++)
-            {
-                Answer answer = ParseAnswer(ref i);
-                Answers.Add(answer);
-            }
-
-            AdditionalRecords = new List<Answer>();
-            for (int a = 0; a < AdditionalRecordCount; a++)
-            {
-                Answer answer = ParseAnswer(ref i);
-                Answers.Add(answer);
             }
         }
 
