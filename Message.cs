@@ -39,15 +39,20 @@ namespace mifty
         public ushort NameServerCount { get; set; }
         public ushort AdditionalRecordCount { get; set; }
 
+        public List<Query> Queries { get; set; }
+        public List<Answer> Answers { get; set; }
+        public List<Answer> Authority { get; set; }
+        public List<Answer> AdditionalRecords { get; set; }
+
         public ushort ZoneCount { get; set; }
         public ushort PrerequisiteCount { get; set; }
         public ushort UpdateCount { get; set; }
         public ushort AdditionalDataCount { get; set; }
 
-        public List<Query> Queries { get; set; }
-        public List<Answer> Answers { get; set; }
-        public List<Answer> Authority { get; set; }
-        public List<Answer> AdditionalRecords { get; set; }
+        public List<Query> Zones { get; set; }
+        public List<Answer> Prerequisites { get; set; }
+        public List<Answer> Updates { get; set; }
+        public List<Answer> AdditionalData { get; set; }
 
         private byte[] bytes;
 
@@ -257,6 +262,38 @@ namespace mifty
                 UpdateCount = (ushort)((ushort)(bytes[8] << 8) | (ushort)bytes[9]);
                 AdditionalDataCount = (ushort)((ushort)(bytes[10] << 8) | (ushort)bytes[11]);
 
+                int i = 12;
+
+                Zones = new List<Query>();
+                for (int a = 0; a < ZoneCount; a++)
+                {
+                    Query query = new Query();
+                    query.Name = ParseName(ref i);
+                    query.Type = (ushort)((ushort)(bytes[i++] << 8) | (ushort)bytes[i++]);
+                    query.Class = (ushort)((ushort)(bytes[i++] << 8) | (ushort)bytes[i++]);
+                    Zones.Add(query);
+                }
+
+                Prerequisites = new List<Answer>();
+                for (int a = 0; a < PrerequisiteCount; a++)
+                {
+                    Answer answer = ParseAnswer(ref i);
+                    Prerequisites.Add(answer);
+                }
+
+                Updates = new List<Answer>();
+                for (int a = 0; a < UpdateCount; a++)
+                {
+                    Answer answer = ParseAnswer(ref i);
+                    Updates.Add(answer);
+                }
+
+                AdditionalData = new List<Answer>();
+                for (int a = 0; a < AdditionalDataCount; a++)
+                {
+                    Answer answer = ParseAnswer(ref i);
+                    AdditionalData.Add(answer);
+                }
             }
         }
 
