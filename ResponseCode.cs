@@ -8,5 +8,10 @@ namespace mifty
         public const byte NameError = 3;
         public const byte NotImplemented = 4;
         public const byte Refused = 5;
+        public const byte YXDOMAIN = 6;
+        public const byte YXRRSET = 7;
+        public const byte NXRRSET = 8;
+        public const byte NotAuthoritative = 9;
+        public const byte NotZone = 10;
     }
 }

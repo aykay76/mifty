@@ -141,7 +141,7 @@ namespace mifty
             Array.Copy(bytes, 0, newBytes, pos, bytes.Length);
             pos += bytes.Length;
 
-            // this is not a query
+            // this is not a query, and i'm authoritative
             newBytes[2] |= 0x84;
 
             // update the answer count

@@ -40,6 +40,7 @@ namespace mifty
             // TODO: need option for path to zone files
             //       need option for naughty list
             //       need option for turning off dynamic config
+            //       add options for compatibility with different RFCs?
             for (int i = 0; i < args.Length; i++)
             {
                 if (args[i] == "--config" || args[i] == "-c")

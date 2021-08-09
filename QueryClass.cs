@@ -6,6 +6,7 @@ namespace mifty
         public const ushort CSNet = 2;
         public const ushort Chaos = 3;
         public const ushort Hesiod = 4;
+        public const ushort None = 254;
         public const ushort All = 255;
 
         public static ushort Parse(string input)
