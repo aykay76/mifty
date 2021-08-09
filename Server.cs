@@ -194,7 +194,24 @@ namespace mifty
 
         protected void ProcessUpdate(Message message)
         {
-            
+            // see 3.1.2 of RFC 2136
+            if (message.ZoneCount != 1 || message.Zones[0].Class != QueryType.SOA)
+            {
+                message.ResponseCode = ResponseCode.FormatError;
+                return;
+            }
+
+            // TODO: if i'm a slave (not yet implemented masters and slaves) need to forward to master for zone - assuming master for now
+
+            // see section 3.2.5 of RFC 2136
+            foreach (Answer requisite in message.Prerequisites)
+            {
+                if (requisite.TimeToLive != 0)
+                {
+                    message.ResponseCode = ResponseCode.FormatError;
+                    return;
+                }
+            }
         }
 
         public void CommonCallback(IAsyncResult asyncResult, int ipVersion)
@@ -243,8 +260,10 @@ namespace mifty
                 {
                     ProcessUpdate(message);
                 }
-
-                // TODO: do some basic checks like does the message contain at least one query?
+                else
+                {
+                    message.ResponseCode = ResponseCode.NotImplemented;
+                }
 
                 totalRequestCounter.Inc();
 
