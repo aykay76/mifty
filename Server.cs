@@ -47,7 +47,6 @@ namespace mifty
             Clients = new Dictionary<ushort, Client>();
         }
 
-        // TODO: refactor to have v4 callback and v6 callback that will call a common function to process the incoming request
         public static void ReceiveCallbackV6(IAsyncResult asyncResult)
         {
             Server server = (Server)asyncResult.AsyncState;
@@ -129,18 +128,12 @@ namespace mifty
 
                 // TODO: do some basic checks like does the message contain at least one query?
 
-                if (config.LogLevel >= LogLevel.Info)
-                {
-                    Console.WriteLine($"[INFO] {message.ID} Request received from {remoteIpEndpoint.Address.ToString()}:{remoteIpEndpoint.Port}; {message.Queries[0].Name}");
-                }
-
                 totalRequestCounter.Inc();
 
                 if (config.LogLevel >= LogLevel.Debug)
                 {
                     for (int i = 0; i < messageLength; i++)
                     {
-                        // TODO: decode names and the other fields, output nice logs
                         Console.Write($"{bytes[i]:X2} ");
                         if (i % 16 == 15) Console.WriteLine();
                     }
@@ -148,93 +141,102 @@ namespace mifty
                     Console.WriteLine($"Total bytes: {messageLength}");
                 }
 
-                if (config.LogLevel >= LogLevel.Trace)
+                for (int q = 0; q < message.QueryCount; q++)
                 {
-                    Console.WriteLine("[TRACE] Checking naughty list, just once 😉");
-                }
-
-                // TODO: handle multiple queries?!
-                if (naughtyList != null && naughtyList.Match(message.Queries[0].Name))
-                {
-                    blockedRequestCounter.Inc();
-
+                    // TODO: re-factor this
                     if (config.LogLevel >= LogLevel.Info)
                     {
-                        Console.WriteLine($"[INFO] Not forwarding or responding to {message.Queries[0].Name} - it's on the naughty list! 😯");
+                        Console.WriteLine($"[INFO] {message.ID} Request received from {remoteIpEndpoint.Address.ToString()}:{remoteIpEndpoint.Port}; {message.Queries[q].Name}");
                     }
-                }
-                else
-                {
+
                     if (config.LogLevel >= LogLevel.Trace)
                     {
-                        Console.WriteLine("[TRACE] Creating client and sending request to forwarder");
+                        Console.WriteLine("[TRACE] Checking naughty list, just once 😉");
                     }
 
-                    // do i have a match in my catalogue?
-                    ProcessQuery(message.Queries[0], message);
-                    
-                    if (message.AnswerCount == 0)
+                    // TODO: handle multiple queries?!
+                    if (naughtyList != null && naughtyList.Match(message.Queries[q].Name))
                     {
-                        // TODO: check cache - I may not need to go to the network at all
+                        blockedRequestCounter.Inc();
 
-                        // create a new client
-                        Client client = new Client();
-                        client.Server = this;
-                        client.IPVersion = ipVersion;
-                        client.RemoteEndpoint = remoteIpEndpoint;
-                        Clients[message.ID] = client;
-
-                        // make IPv4/IPv6 configurable or automatic based on config options
-                        if (ipVersion == 6)
+                        if (config.LogLevel >= LogLevel.Info)
                         {
-                            client.UdpOut = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
-                            client.UdpOut.Bind(new IPEndPoint(IPAddress.Parse(config.ResolverAddressV6), 0));
-                        }
-                        else
-                        {
-                            client.UdpOut = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-                            client.UdpOut.Bind(new IPEndPoint(IPAddress.Parse(config.ResolverAddressV4), 0));
-                        }
-
-                        if (ipVersion == 6)
-                        {
-                            foreach (string forwarder in config.ForwardersV6)
-                            {
-                                int sent = client.UdpOut.SendTo(bytes, 0, messageLength, SocketFlags.None, new IPEndPoint(IPAddress.Parse(forwarder), 53));
-                                client.UdpOut.BeginReceiveFrom(client.ResponseBuffer, client.ResponsePosition, client.ResponseBuffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveResponseCallback), client);
-                            }
-                        }
-                        else
-                        {
-                            foreach (string forwarder in config.ForwardersV4)
-                            {
-                                int sent = client.UdpOut.SendTo(bytes, 0, messageLength, SocketFlags.None, new IPEndPoint(IPAddress.Parse(forwarder), 53));
-                                client.UdpOut.BeginReceiveFrom(client.ResponseBuffer, client.ResponsePosition, client.ResponseBuffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveResponseCallback), client);
-                            }
+                            Console.WriteLine($"[INFO] Not forwarding or responding to {message.Queries[q].Name} - it's on the naughty list! 😯");
                         }
                     }
                     else
                     {
-                        Console.WriteLine("I have authority, need to construct response");
-
-                        for (int i = 0; i < message.Bytes.Length; i++)
+                        if (config.LogLevel >= LogLevel.Trace)
                         {
-                            // TODO: decode names and the other fields, output nice logs
-                            Console.Write($"{message.Bytes[i]:X2} ");
-                            if (i % 16 == 15) Console.WriteLine();
+                            Console.WriteLine("[TRACE] Creating client and sending request to forwarder");
                         }
-                        Console.WriteLine();
-                        Console.WriteLine($"Total bytes: {message.Bytes.Length}");
 
-                        // send straight back to requester
-                        int sent = 0;
-                        if (ipVersion == 6)
+                        // do i have a match in my catalogue?
+                        ProcessQuery(message.Queries[q], message);
+                        
+                        if (message.AnswerCount == 0)
                         {
-                            sent = UdpV6.SendTo(message.Bytes, 0, message.Bytes.Length, SocketFlags.None, remoteIpEndpoint);
+                            // TODO: check cache - I may not need to go to the network at all
+
+                            // create a new client
+                            Client client = new Client();
+                            client.Server = this;
+                            client.IPVersion = ipVersion;
+                            client.RemoteEndpoint = remoteIpEndpoint;
+                            Clients[message.ID] = client;
+
+                            // make IPv4/IPv6 configurable or automatic based on config options
+                            if (ipVersion == 6)
+                            {
+                                client.UdpOut = new Socket(AddressFamily.InterNetworkV6, SocketType.Dgram, ProtocolType.Udp);
+                                client.UdpOut.Bind(new IPEndPoint(IPAddress.Parse(config.ResolverAddressV6), 0));
+                            }
+                            else
+                            {
+                                client.UdpOut = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                                client.UdpOut.Bind(new IPEndPoint(IPAddress.Parse(config.ResolverAddressV4), 0));
+                            }
+
+                            if (ipVersion == 6)
+                            {
+                                foreach (string forwarder in config.ForwardersV6)
+                                {
+                                    int sent = client.UdpOut.SendTo(bytes, 0, messageLength, SocketFlags.None, new IPEndPoint(IPAddress.Parse(forwarder), 53));
+                                    client.UdpOut.BeginReceiveFrom(client.ResponseBuffer, client.ResponsePosition, client.ResponseBuffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveResponseCallback), client);
+                                }
+                            }
+                            else
+                            {
+                                foreach (string forwarder in config.ForwardersV4)
+                                {
+                                    int sent = client.UdpOut.SendTo(bytes, 0, messageLength, SocketFlags.None, new IPEndPoint(IPAddress.Parse(forwarder), 53));
+                                    client.UdpOut.BeginReceiveFrom(client.ResponseBuffer, client.ResponsePosition, client.ResponseBuffer.Length, SocketFlags.None, ref dummyEndpoint, new AsyncCallback(ReceiveResponseCallback), client);
+                                }
+                            }
                         }
                         else
                         {
-                            sent = UdpV4.SendTo(message.Bytes, 0, message.Bytes.Length, SocketFlags.None, remoteIpEndpoint);
+                            Console.WriteLine("I have authority, need to construct response");
+
+                            for (int i = 0; i < message.Bytes.Length; i++)
+                            {
+                                // TODO: decode names and the other fields, output nice logs
+                                Console.Write($"{message.Bytes[i]:X2} ");
+                                if (i % 16 == 15) Console.WriteLine();
+                            }
+                            Console.WriteLine();
+                            Console.WriteLine($"Total bytes: {message.Bytes.Length}");
+
+                            // send straight back to requester
+                            int sent = 0;
+                            if (ipVersion == 6)
+                            {
+                                sent = UdpV6.SendTo(message.Bytes, 0, message.Bytes.Length, SocketFlags.None, remoteIpEndpoint);
+                            }
+                            else
+                            {
+                                sent = UdpV4.SendTo(message.Bytes, 0, message.Bytes.Length, SocketFlags.None, remoteIpEndpoint);
+                            }
                         }
                     }
                 }
