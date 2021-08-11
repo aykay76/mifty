@@ -292,23 +292,41 @@ namespace mifty
             // 3.4 Do updates
             foreach (Answer update in message.Updates)
             {
-                // TODO: pre-scan
-                // [rr] for rr in updates
-                //     if (zone_of(rr.name) != ZNAME)
-                //             return (NOTZONE);
-                //     if (rr.class == zclass)
-                //             if (rr.type & ANY|AXFR|MAILA|MAILB)
-                //                 return (FORMERR)
-                //     elsif (rr.class == ANY)
-                //             if (rr.ttl != 0 || rr.rdlength != 0
-                //                 || rr.type & AXFR|MAILA|MAILB)
-                //                 return (FORMERR)
-                //     elsif (rr.class == NONE)
-                //             if (rr.ttl != 0 || rr.type & ANY|AXFR|MAILA|MAILB)
-                //                 return (FORMERR)
-                //     else
-                //             return (FORMERR)
+                if (ZoneOf(update.Name) != message.Zones[0].Name)
+                {
+                    message.ResponseCode = ResponseCode.NotZone;
+                    return;
+                }
 
+                if (update.Class == message.Zones[0].Class)
+                {
+                    if (update.Type == QueryType.All || update.Type == QueryType.AFXR || update.Type == QueryType.MAILA || update.Type == QueryType.MAILB)
+                    {
+                        message.ResponseCode = ResponseCode.FormatError;
+                        return;
+                    }
+                }
+                else if (update.Class == QueryClass.All)
+                {
+                    if (update.TimeToLive != 0 || update.Length != 0 || (update.Type == QueryType.AFXR || update.Type == QueryType.MAILA || update.Type == QueryType.MAILB))
+                    {
+                        message.ResponseCode = ResponseCode.FormatError;
+                        return;
+                    }
+                }
+                else if (update.Class == QueryClass.None)
+                {
+                    if (update.TimeToLive != 0 || (update.Type == QueryType.All || update.Type == QueryType.AFXR || update.Type == QueryType.MAILA || update.Type == QueryType.MAILB))
+                    {
+                        message.ResponseCode = ResponseCode.FormatError;
+                        return;
+                    }
+                }
+                else
+                {
+                    message.ResponseCode = ResponseCode.FormatError;
+                    return;
+                }
             }
 
             // TODO: apply updates
