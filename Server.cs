@@ -400,6 +400,14 @@ namespace mifty
                     if (rr.Type == QueryType.All)
                     {
                     }
+                    else if (rr.Name == message.Zones[0].Name && (rr.Type == QueryType.SOA || rr.Type == QueryType .NS))
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        // TODO: null/remove the matching zone rrset
+                    }
 
                     //     elsif (rr.class == ANY)
                     //             if (rr.type == ANY)
