@@ -213,6 +213,8 @@ namespace mifty
             // TODO: to do this and to handle persistent storage requirement before responding - I need to make this async and build some
             // TODO: kind of context object that can keep track of in-flight requests
 
+            Catalogue c = catalogue.FindFQDN(message.Zones[0].Name);
+
             // 3.2 Check pre-requisites
             // see section 3.2.5 of RFC 2136
             foreach (Answer requisite in message.Prerequisites)
@@ -332,21 +334,48 @@ namespace mifty
             }
 
             // TODO: 3.4.2 apply updates
+            // [rr] for rr in updates
+            // TODO: get the Catalogue child entry that matches the zone[0] in the update message
+            // that's the zone we're operating in, and will speed up the below FindEntryX calls
+
             foreach (Answer rr in message.Updates)
             {
+                //     if (rr.class == zclass)
                 if (rr.Class == message.Zones[0].Class)
                 {
-                    // [rr] for rr in updates
-                    //     if (rr.class == zclass)
                     //             if (rr.type == CNAME)
                     //                 if (zone_rrset<rr.name, ~CNAME>)
                     //                     next [rr]
                     //             elsif (zone_rrset<rr.name, CNAME>)
                     //                 next [rr]
+                    var cnames = c.FindEntry(rr.Class, QueryType.CNAME, rr.Name);
+                    if (rr.Type == QueryType.CNAME)
+                    {
+                        // not sure if the rr.name is FQDN - if not, need to add zone name
+                        var result = c.FindEntryNotType(rr.Class, rr.Type, rr.Name);
+                        if (result.Count > 0)
+                        {
+                            continue;
+                        }
+                    }
+                    else if (cnames.Count > 0)
+                    {
+                        continue;
+                    }
+                    
                     //             if (rr.type == SOA)
                     //                 if (!zone_rrset<rr.name, SOA> ||
                     //                     zone_rr<rr.name, SOA>.serial > rr.soa.serial)
                     //                     next [rr]
+                    if (rr.Type == QueryType.SOA)
+                    {
+                        var soa = c.FindEntry(rr.Class, QueryType.SOA, rr.Name);
+                        if (soa.Count == 0 || soa[0].DataString != rr.DataString)
+                        {
+                            continue;
+                        }
+                    }
+
                     //             for zrr in zone_rrset<rr.name, rr.type>
                     //                 if (rr.type == CNAME || rr.type == SOA ||
                     //                     (rr.type == WKS && rr.proto == zrr.proto &&
@@ -355,14 +384,9 @@ namespace mifty
                     //                     zrr = rr
                     //                     next [rr]
                     //             zone_rrset<rr.name, rr.type> += rr
-                    if (rr.Type == QueryType.CNAME)
-                    {
-                        Query q = new Query();
-                        q.Class = rr.Class;
-                        q.Type = rr.Type;
-                        q.Name = rr.Name;
-                        List<Answer> answers = catalogue.FindEntry(q);
-                    }
+                    // TODO: based on above pseudocode work out whether to replace or add to the record set
+                    // thism ay not beed the restructure at the top of Catalogue but I will need to add
+                    // methods to add or replace entries
                 }
                 else if (rr.Class == QueryClass.All)
                 {
@@ -375,7 +399,6 @@ namespace mifty
                     //    SOA or NS RRs will be deleted.
                     if (rr.Type == QueryType.All)
                     {
-                        if (rr.Name == )
                     }
 
                     //     elsif (rr.class == ANY)

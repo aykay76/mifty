@@ -306,6 +306,9 @@ namespace dsl
                             responsible += origin;
                         }
 
+                        // TODO: need to return these values for storage somewhere because I need to be able to 
+                        // check serial number for updates
+
                         // serial number
                         NumberToken nt = token as NumberToken;
                         int serialNumber = (int)nt.Value;
