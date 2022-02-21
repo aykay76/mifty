@@ -203,13 +203,15 @@ namespace mifty
         protected void ProcessUpdate(Message message)
         {
             // see 3.1.2 of RFC 2136
-            if (message.ZoneCount != 1 || message.Zones[0].Class != QueryType.SOA)
+            if (message.ZoneCount != 1 || message.Zones[0].Type != QueryType.SOA)
             {
                 message.ResponseCode = ResponseCode.FormatError;
                 return;
             }
 
             // TODO: if i'm a slave (not yet implemented masters and slaves) need to forward to master for zone - assuming master for now
+            // TODO: to do this and to handle persistent storage requirement before responding - I need to make this async and build some
+            // TODO: kind of context object that can keep track of in-flight requests
 
             // 3.2 Check pre-requisites
             // see section 3.2.5 of RFC 2136
@@ -272,7 +274,7 @@ namespace mifty
 
                 if (requisite.Class == message.Zones[0].Class)
                 {
-                    // TODO: add to some temp structure
+                    // TODO: add to some temp structure for below check that all supplied rrsets are valid
                 }
                 else
                 {
@@ -289,7 +291,7 @@ namespace mifty
             // 3.3 Check permissions
             // TODO: implement permissions!! :)
 
-            // 3.4 Do updates
+            // 3.4.1 Pre-scan to check formats etc.
             foreach (Answer update in message.Updates)
             {
                 if (ZoneOf(update.Name) != message.Zones[0].Name)
@@ -329,43 +331,76 @@ namespace mifty
                 }
             }
 
-            // TODO: apply updates
-            // [rr] for rr in updates
-            //     if (rr.class == zclass)
-            //             if (rr.type == CNAME)
-            //                 if (zone_rrset<rr.name, ~CNAME>)
-            //                     next [rr]
-            //             elsif (zone_rrset<rr.name, CNAME>)
-            //                 next [rr]
-            //             if (rr.type == SOA)
-            //                 if (!zone_rrset<rr.name, SOA> ||
-            //                     zone_rr<rr.name, SOA>.serial > rr.soa.serial)
-            //                     next [rr]
-            //             for zrr in zone_rrset<rr.name, rr.type>
-            //                 if (rr.type == CNAME || rr.type == SOA ||
-            //                     (rr.type == WKS && rr.proto == zrr.proto &&
-            //                     rr.address == zrr.address) ||
-            //                     rr.rdata == zrr.rdata)
-            //                     zrr = rr
-            //                     next [rr]
-            //             zone_rrset<rr.name, rr.type> += rr
-            //     elsif (rr.class == ANY)
-            //             if (rr.type == ANY)
-            //                 if (rr.name == zname)
-            //                     zone_rrset<rr.name, ~(SOA|NS)> = Nil
-            //                 else
-            //                     zone_rrset<rr.name, *> = Nil
-            //             elsif (rr.name == zname &&
-            //                 (rr.type == SOA || rr.type == NS))
-            //                 next [rr]
-            //             else
-            //                 zone_rrset<rr.name, rr.type> = Nil
-            //     elsif (rr.class == NONE)
-            //             if (rr.type == SOA)
-            //                 next [rr]
-            //             if (rr.type == NS && zone_rrset<rr.name, NS> == rr)
-            //                 next [rr]
-            //             zone_rr<rr.name, rr.type, rr.data> = Nil
+            // TODO: 3.4.2 apply updates
+            foreach (Answer rr in message.Updates)
+            {
+                if (rr.Class == message.Zones[0].Class)
+                {
+                    // [rr] for rr in updates
+                    //     if (rr.class == zclass)
+                    //             if (rr.type == CNAME)
+                    //                 if (zone_rrset<rr.name, ~CNAME>)
+                    //                     next [rr]
+                    //             elsif (zone_rrset<rr.name, CNAME>)
+                    //                 next [rr]
+                    //             if (rr.type == SOA)
+                    //                 if (!zone_rrset<rr.name, SOA> ||
+                    //                     zone_rr<rr.name, SOA>.serial > rr.soa.serial)
+                    //                     next [rr]
+                    //             for zrr in zone_rrset<rr.name, rr.type>
+                    //                 if (rr.type == CNAME || rr.type == SOA ||
+                    //                     (rr.type == WKS && rr.proto == zrr.proto &&
+                    //                     rr.address == zrr.address) ||
+                    //                     rr.rdata == zrr.rdata)
+                    //                     zrr = rr
+                    //                     next [rr]
+                    //             zone_rrset<rr.name, rr.type> += rr
+                    if (rr.Type == QueryType.CNAME)
+                    {
+                        Query q = new Query();
+                        q.Class = rr.Class;
+                        q.Type = rr.Type;
+                        q.Name = rr.Name;
+                        List<Answer> answers = catalogue.FindEntry(q);
+                    }
+                }
+                else if (rr.Class == QueryClass.All)
+                {
+                    //    3.4.2.3. For any Update RR whose CLASS is ANY and whose TYPE is ANY,
+                    //    all Zone RRs with the same NAME are deleted, unless the NAME is the
+                    //    same as ZNAME in which case only those RRs whose TYPE is other than
+                    //    SOA or NS are deleted.  For any Update RR whose CLASS is ANY and
+                    //    whose TYPE is not ANY all Zone RRs with the same NAME and TYPE are
+                    //    deleted, unless the NAME is the same as ZNAME in which case neither
+                    //    SOA or NS RRs will be deleted.
+                    if (rr.Type == QueryType.All)
+                    {
+                        if (rr.Name == )
+                    }
+
+                    //     elsif (rr.class == ANY)
+                    //             if (rr.type == ANY)
+                    //                 if (rr.name == zname)
+                    //                     zone_rrset<rr.name, ~(SOA|NS)> = Nil
+                    //                 else
+                    //                     zone_rrset<rr.name, *> = Nil
+                    //             elsif (rr.name == zname &&
+                    //                 (rr.type == SOA || rr.type == NS))
+                    //                 next [rr]
+                    //             else
+                    //                 zone_rrset<rr.name, rr.type> = Nil
+                }
+                else if (rr.Class == QueryClass.None)
+                {
+                    //     elsif (rr.class == NONE)
+                    //             if (rr.type == SOA)
+                    //                 next [rr]
+                    //             if (rr.type == NS && zone_rrset<rr.name, NS> == rr)
+                    //                 next [rr]
+                    //             zone_rr<rr.name, rr.type, rr.data> = Nil
+
+                }
+            }
             // return (NOERROR)
             
             // TODO: construct and send response

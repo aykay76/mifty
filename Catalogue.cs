@@ -9,6 +9,9 @@ namespace mifty
         public List<Answer> Answers { get; set; }
         public List<Catalogue> Children { get; set; }
 
+        // TODO: add a classification whether this is a MASTER or SLAVE zone
+        // this will direct whether we answer directly or forward to another master server
+
         // add entries to a catalogue as described in section 6 of RFC 1035 - if this gets very big a list might not cut it and
         // I might change to a hashtable (Dictionary) with the entry name being key
         public static Catalogue FromAnswerList(List<Answer> entries)
