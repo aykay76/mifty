@@ -397,8 +397,17 @@ namespace mifty
                     //    whose TYPE is not ANY all Zone RRs with the same NAME and TYPE are
                     //    deleted, unless the NAME is the same as ZNAME in which case neither
                     //    SOA or NS RRs will be deleted.
+                    //     elsif (rr.class == ANY)
                     if (rr.Type == QueryType.All)
                     {
+                        if (rr.Name == message.Zones[0].Name)
+                        {
+                            // TODO: delete all answers in the zone that aren't SOA or NS
+                        }
+                        else
+                        {
+                            // TODO: delete all answers in the zone that match the name
+                        }
                     }
                     else if (rr.Name == message.Zones[0].Name && (rr.Type == QueryType.SOA || rr.Type == QueryType .NS))
                     {
@@ -406,23 +415,26 @@ namespace mifty
                     }
                     else
                     {
-                        // TODO: null/remove the matching zone rrset
+                        // TODO: null/remove all answers that match name and type
+                    }
+                }
+                else if (rr.Class == QueryClass.None) // Section 3.4.2.4
+                {
+                    if (rr.Type == QueryType.SOA)
+                    {
+                        continue;
                     }
 
-                    //     elsif (rr.class == ANY)
-                    //             if (rr.type == ANY)
-                    //                 if (rr.name == zname)
-                    //                     zone_rrset<rr.name, ~(SOA|NS)> = Nil
-                    //                 else
-                    //                     zone_rrset<rr.name, *> = Nil
-                    //             elsif (rr.name == zname &&
-                    //                 (rr.type == SOA || rr.type == NS))
-                    //                 next [rr]
-                    //             else
-                    //                 zone_rrset<rr.name, rr.type> = Nil
-                }
-                else if (rr.Class == QueryClass.None)
-                {
+                    if (rr.Type == QueryType.NS)
+                    {
+                        var ns = c.FindEntry(rr.Class, rr.Type, rr.Name);
+                        if (ns.Count == 1 && ns[0] == rr)
+                        {
+                            continue;
+                        }
+
+                        // TODO: delete the Answer that matches rr
+                    }
                     //     elsif (rr.class == NONE)
                     //             if (rr.type == SOA)
                     //                 next [rr]
