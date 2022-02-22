@@ -376,7 +376,9 @@ namespace mifty
                         }
                     }
 
-                    //             for zrr in zone_rrset<rr.name, rr.type>
+                    var zrrset = c.FindEntry(rr.Class, rr.Type, rr.Name);
+                    foreach (Answer zrr in zrrset)
+                    {
                     //                 if (rr.type == CNAME || rr.type == SOA ||
                     //                     (rr.type == WKS && rr.proto == zrr.proto &&
                     //                     rr.address == zrr.address) ||
@@ -384,9 +386,21 @@ namespace mifty
                     //                     zrr = rr
                     //                     next [rr]
                     //             zone_rrset<rr.name, rr.type> += rr
+                        if (rr.Type == QueryType.CNAME || rr.Type == QueryType.SOA || 
+                            (rr.Type == QueryType.WKS && rr == zrr) ||// TODO: replace this with proper check, need to store proto and address
+                            rr.Data == zrr.Data
+                        )
+                        {
+                            // TODO: replace zone rr with rr
+                            continue;
+                        }
+
+                        c.Answers.Add(rr);
+                    }
                     // TODO: based on above pseudocode work out whether to replace or add to the record set
                     // thism ay not beed the restructure at the top of Catalogue but I will need to add
                     // methods to add or replace entries
+
                 }
                 else if (rr.Class == QueryClass.All)
                 {
@@ -433,15 +447,8 @@ namespace mifty
                             continue;
                         }
 
-                        // TODO: delete the Answer that matches rr
+                        // TODO: delete the Answer that matches rr name, type and data
                     }
-                    //     elsif (rr.class == NONE)
-                    //             if (rr.type == SOA)
-                    //                 next [rr]
-                    //             if (rr.type == NS && zone_rrset<rr.name, NS> == rr)
-                    //                 next [rr]
-                    //             zone_rr<rr.name, rr.type, rr.data> = Nil
-
                 }
             }
             // return (NOERROR)
