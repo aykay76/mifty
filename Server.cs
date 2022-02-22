@@ -379,13 +379,6 @@ namespace mifty
                     var zrrset = c.FindEntry(rr.Class, rr.Type, rr.Name);
                     foreach (Answer zrr in zrrset)
                     {
-                    //                 if (rr.type == CNAME || rr.type == SOA ||
-                    //                     (rr.type == WKS && rr.proto == zrr.proto &&
-                    //                     rr.address == zrr.address) ||
-                    //                     rr.rdata == zrr.rdata)
-                    //                     zrr = rr
-                    //                     next [rr]
-                    //             zone_rrset<rr.name, rr.type> += rr
                         if (rr.Type == QueryType.CNAME || rr.Type == QueryType.SOA || 
                             (rr.Type == QueryType.WKS && rr == zrr) ||// TODO: replace this with proper check, need to store proto and address
                             rr.Data == zrr.Data
@@ -397,10 +390,6 @@ namespace mifty
 
                         c.Answers.Add(rr);
                     }
-                    // TODO: based on above pseudocode work out whether to replace or add to the record set
-                    // thism ay not beed the restructure at the top of Catalogue but I will need to add
-                    // methods to add or replace entries
-
                 }
                 else if (rr.Class == QueryClass.All)
                 {

@@ -97,16 +97,17 @@ namespace mifty
             Console.WriteLine("Read master file(s) successfully");
 
             var exitEvent = new ManualResetEvent(false);
-
             Console.CancelKeyPress += (sender, eventArgs) => {
                                   eventArgs.Cancel = true;
                                   exitEvent.Set();
                               };
 
+            // TODO: make this configurable on the command line or environment (12-factor)
             NaughtyList naughtyList = null;
             naughtyList = NaughtyList.FromFile("naughtylist.txt");
 
             // Create the server with config loaded from file
+            // TODO: this will vary based on configuration of above naughty list and zones etc.
             Server server = new Server();
             server.WithConfig(ServerConfig.FromFile(configFile)).WithCatalogue(catalogue).WithNaughtyList(naughtyList).Start();
 
