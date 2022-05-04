@@ -35,6 +35,7 @@ namespace mifty
         static void Main(string[] args)
         {
             string configFile = string.Empty;
+            NaughtyList naughtyList = null;
 
             // do some command line parsing
             // TODO: need option for path to zone files
@@ -76,6 +77,29 @@ namespace mifty
                     ConvertNaughtyList(args[i]);
                     return;
                 }
+                else if (args[i] == "--naughty" || args[i] == "-n")
+                {
+                    i++;
+                    if (i == args.Length)
+                    {
+                        Console.WriteLine("You must specify a naughty list file using '--naughty <filename>' or don't specify the --naughty flag");
+                        return;
+                    }
+
+                    string naughtyFilename = args[i];
+                    if (!Path.IsPathRooted(naughtyFilename))
+                    {
+                        naughtyFilename = Environment.CurrentDirectory + Path.DirectorySeparatorChar + naughtyFilename;
+                        if (!File.Exists(naughtyFilename))
+                        {
+                            Console.WriteLine($"Naughty list file ({naughtyFilename}) could not be found, try again please.");
+                            return;
+                        }
+
+                        // load the naughty list from the file specified
+                        naughtyList = NaughtyList.FromFile(naughtyFilename);
+                    }
+                }
                 else if (args[i] == "--help")
                 {
                     
@@ -102,14 +126,13 @@ namespace mifty
                                   exitEvent.Set();
                               };
 
-            // TODO: make this configurable on the command line or environment (12-factor)
-            NaughtyList naughtyList = null;
-            naughtyList = NaughtyList.FromFile("naughtylist.txt");
-
             // Create the server with config loaded from file
             // TODO: this will vary based on configuration of above naughty list and zones etc.
             Server server = new Server();
-            server.WithConfig(ServerConfig.FromFile(configFile)).WithCatalogue(catalogue).WithNaughtyList(naughtyList).Start();
+            server.WithConfig(ServerConfig.FromFile(configFile))
+                .WithCatalogue(catalogue)
+                .WithNaughtyList(naughtyList)
+                .Start();
 
             FileSystemWatcher watcher = new FileSystemWatcher(Environment.CurrentDirectory, "*.json");
             watcher.Changed += (o,e) => {
