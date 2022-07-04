@@ -203,13 +203,17 @@ namespace mifty
         protected void ProcessUpdate(Message message)
         {
             // see 3.1.2 of RFC 2136
-            if (message.ZoneCount != 1 || message.Zones[0].Class != QueryType.SOA)
+            if (message.ZoneCount != 1 || message.Zones[0].Type != QueryType.SOA)
             {
                 message.ResponseCode = ResponseCode.FormatError;
                 return;
             }
 
             // TODO: if i'm a slave (not yet implemented masters and slaves) need to forward to master for zone - assuming master for now
+            // TODO: to do this and to handle persistent storage requirement before responding - I need to make this async and build some
+            // TODO: kind of context object that can keep track of in-flight requests
+
+            Catalogue c = catalogue.FindFQDN(message.Zones[0].Name);
 
             // 3.2 Check pre-requisites
             // see section 3.2.5 of RFC 2136
@@ -272,7 +276,7 @@ namespace mifty
 
                 if (requisite.Class == message.Zones[0].Class)
                 {
-                    // TODO: add to some temp structure
+                    // TODO: add to some temp structure for below check that all supplied rrsets are valid
                 }
                 else
                 {
@@ -289,7 +293,7 @@ namespace mifty
             // 3.3 Check permissions
             // TODO: implement permissions!! :)
 
-            // 3.4 Do updates
+            // 3.4.1 Pre-scan to check formats etc.
             foreach (Answer update in message.Updates)
             {
                 if (ZoneOf(update.Name) != message.Zones[0].Name)
@@ -329,43 +333,113 @@ namespace mifty
                 }
             }
 
-            // TODO: apply updates
+            // TODO: 3.4.2 apply updates
             // [rr] for rr in updates
-            //     if (rr.class == zclass)
-            //             if (rr.type == CNAME)
-            //                 if (zone_rrset<rr.name, ~CNAME>)
-            //                     next [rr]
-            //             elsif (zone_rrset<rr.name, CNAME>)
-            //                 next [rr]
-            //             if (rr.type == SOA)
-            //                 if (!zone_rrset<rr.name, SOA> ||
-            //                     zone_rr<rr.name, SOA>.serial > rr.soa.serial)
-            //                     next [rr]
-            //             for zrr in zone_rrset<rr.name, rr.type>
-            //                 if (rr.type == CNAME || rr.type == SOA ||
-            //                     (rr.type == WKS && rr.proto == zrr.proto &&
-            //                     rr.address == zrr.address) ||
-            //                     rr.rdata == zrr.rdata)
-            //                     zrr = rr
-            //                     next [rr]
-            //             zone_rrset<rr.name, rr.type> += rr
-            //     elsif (rr.class == ANY)
-            //             if (rr.type == ANY)
-            //                 if (rr.name == zname)
-            //                     zone_rrset<rr.name, ~(SOA|NS)> = Nil
-            //                 else
-            //                     zone_rrset<rr.name, *> = Nil
-            //             elsif (rr.name == zname &&
-            //                 (rr.type == SOA || rr.type == NS))
-            //                 next [rr]
-            //             else
-            //                 zone_rrset<rr.name, rr.type> = Nil
-            //     elsif (rr.class == NONE)
-            //             if (rr.type == SOA)
-            //                 next [rr]
-            //             if (rr.type == NS && zone_rrset<rr.name, NS> == rr)
-            //                 next [rr]
-            //             zone_rr<rr.name, rr.type, rr.data> = Nil
+            // TODO: get the Catalogue child entry that matches the zone[0] in the update message
+            // that's the zone we're operating in, and will speed up the below FindEntryX calls
+
+            foreach (Answer rr in message.Updates)
+            {
+                //     if (rr.class == zclass)
+                if (rr.Class == message.Zones[0].Class)
+                {
+                    //             if (rr.type == CNAME)
+                    //                 if (zone_rrset<rr.name, ~CNAME>)
+                    //                     next [rr]
+                    //             elsif (zone_rrset<rr.name, CNAME>)
+                    //                 next [rr]
+                    var cnames = c.FindEntry(rr.Class, QueryType.CNAME, rr.Name);
+                    if (rr.Type == QueryType.CNAME)
+                    {
+                        // not sure if the rr.name is FQDN - if not, need to add zone name
+                        var result = c.FindEntryNotType(rr.Class, rr.Type, rr.Name);
+                        if (result.Count > 0)
+                        {
+                            continue;
+                        }
+                    }
+                    else if (cnames.Count > 0)
+                    {
+                        continue;
+                    }
+                    
+                    //             if (rr.type == SOA)
+                    //                 if (!zone_rrset<rr.name, SOA> ||
+                    //                     zone_rr<rr.name, SOA>.serial > rr.soa.serial)
+                    //                     next [rr]
+                    if (rr.Type == QueryType.SOA)
+                    {
+                        var soa = c.FindEntry(rr.Class, QueryType.SOA, rr.Name);
+                        if (soa.Count == 0 || soa[0].DataString != rr.DataString)
+                        {
+                            continue;
+                        }
+                    }
+
+                    var zrrset = c.FindEntry(rr.Class, rr.Type, rr.Name);
+                    foreach (Answer zrr in zrrset)
+                    {
+                        if (rr.Type == QueryType.CNAME || rr.Type == QueryType.SOA || 
+                            (rr.Type == QueryType.WKS && rr == zrr) ||// TODO: replace this with proper check, need to store proto and address
+                            rr.Data == zrr.Data
+                        )
+                        {
+                            // TODO: replace zone rr with rr
+                            continue;
+                        }
+
+                        c.Answers.Add(rr);
+                    }
+                }
+                else if (rr.Class == QueryClass.All)
+                {
+                    //    3.4.2.3. For any Update RR whose CLASS is ANY and whose TYPE is ANY,
+                    //    all Zone RRs with the same NAME are deleted, unless the NAME is the
+                    //    same as ZNAME in which case only those RRs whose TYPE is other than
+                    //    SOA or NS are deleted.  For any Update RR whose CLASS is ANY and
+                    //    whose TYPE is not ANY all Zone RRs with the same NAME and TYPE are
+                    //    deleted, unless the NAME is the same as ZNAME in which case neither
+                    //    SOA or NS RRs will be deleted.
+                    //     elsif (rr.class == ANY)
+                    if (rr.Type == QueryType.All)
+                    {
+                        if (rr.Name == message.Zones[0].Name)
+                        {
+                            // TODO: delete all answers in the zone that aren't SOA or NS
+                        }
+                        else
+                        {
+                            // TODO: delete all answers in the zone that match the name
+                        }
+                    }
+                    else if (rr.Name == message.Zones[0].Name && (rr.Type == QueryType.SOA || rr.Type == QueryType .NS))
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        // TODO: null/remove all answers that match name and type
+                    }
+                }
+                else if (rr.Class == QueryClass.None) // Section 3.4.2.4
+                {
+                    if (rr.Type == QueryType.SOA)
+                    {
+                        continue;
+                    }
+
+                    if (rr.Type == QueryType.NS)
+                    {
+                        var ns = c.FindEntry(rr.Class, rr.Type, rr.Name);
+                        if (ns.Count == 1 && ns[0] == rr)
+                        {
+                            continue;
+                        }
+
+                        // TODO: delete the Answer that matches rr name, type and data
+                    }
+                }
+            }
             // return (NOERROR)
             
             // TODO: construct and send response

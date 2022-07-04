@@ -2,6 +2,7 @@ namespace mifty
 {
     public class Answer
     {
+        // TODO: either include the additional fields for SOA/WKS etc. here or use polymorphism to represent different record types
         public string Name { get; set; }
         public ushort Type { get; set; }
         public ushort Class { get; set; }
